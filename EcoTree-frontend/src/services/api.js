@@ -77,3 +77,79 @@ export async function apiRequest(path, options = {}) {
 
   return data;
 }
+
+export function loginUser(credentials) {
+  return apiRequest("/users/login", {
+    method: "POST",
+    auth: false,
+    body: credentials
+  });
+}
+
+export function registerUser(userData) {
+  return apiRequest("/users/register", {
+    method: "POST",
+    auth: false,
+    body: userData
+  });
+}
+
+export function getCurrentUser() {
+  return apiRequest("/users/me");
+}
+
+export function getGoals() {
+  return apiRequest("/goals/");
+}
+
+export function getUserGoals() {
+  return apiRequest("/goals/user");
+}
+
+export function createGoal(goalData) {
+  return apiRequest("/goals/", {
+    method: "POST",
+    body: goalData
+  });
+}
+
+export function updateGoal(goalId, goalData) {
+  return apiRequest(`/goals/${goalId}`, {
+    method: "PUT",
+    body: goalData
+  });
+}
+
+export function updateGoalProgress(goalId, valorAdicionado) {
+  return apiRequest(`/goals/${goalId}/progress`, {
+    method: "PATCH",
+    body: { valor_adicionado: valorAdicionado }
+  });
+}
+
+export function deleteGoal(goalId) {
+  return apiRequest(`/goals/${goalId}`, {
+    method: "DELETE"
+  });
+}
+
+export function getTransactions() {
+  return apiRequest("/transactions/");
+}
+
+export function getTransactionsSummary() {
+  return apiRequest("/transactions/summary");
+}
+
+export function createTransaction(transactionData) {
+  return apiRequest("/transactions/", {
+    method: "POST",
+    body: transactionData
+  });
+}
+
+export function deleteTransaction(transactionId) {
+  return apiRequest(`/transactions/${transactionId}`, {
+    method: "DELETE"
+  });
+}

@@ -1,5 +1,12 @@
 import { useEffect, useState } from "react";
-import { apiRequest } from "../services/api.js";
+import {
+  createGoal,
+  deleteGoal,
+  getGoals,
+  getUserGoals,
+  updateGoal,
+  updateGoalProgress
+} from "../services/api.js";
 
 const initialForm = {
   titulo: "",
@@ -24,8 +31,12 @@ export default function Goals() {
   const [goals, setGoals] = useState([]);
   const [userGoalsTotal, setUserGoalsTotal] = useState(0);
   const [form, setForm] = useState(initialForm);
+  const [editingGoalId, setEditingGoalId] = useState(null);
+  const [progressValues, setProgressValues] = useState({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [progressSavingId, setProgressSavingId] = useState(null);
+  const [deletingGoalId, setDeletingGoalId] = useState(null);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
@@ -35,14 +46,14 @@ export default function Goals() {
 
     try {
       const [allGoalsData, userGoalsData] = await Promise.all([
-        apiRequest("/goals/"),
-        apiRequest("/goals/user")
+        getGoals(),
+        getUserGoals()
       ]);
 
       setGoals(allGoalsData.metas || []);
       setUserGoalsTotal(userGoalsData.total || 0);
     } catch (erro) {
-      setError(erro.message || "Não foi possível carregar metas.");
+      setError(erro.message || "Erro ao carregar dados.");
     } finally {
       setLoading(false);
     }
@@ -59,6 +70,39 @@ export default function Goals() {
     }));
   }
 
+  function buildPayload() {
+    return {
+      titulo: form.titulo.trim(),
+      valor_meta: Number(form.valor_meta),
+      valor_atual: Number(form.valor_atual),
+      prazo: form.prazo || null
+    };
+  }
+
+  function resetForm() {
+    setForm(initialForm);
+    setEditingGoalId(null);
+  }
+
+  function startEditing(goal) {
+    setEditingGoalId(goal.id);
+    setMessage("");
+    setError("");
+    setForm({
+      titulo: goal.titulo || "",
+      valor_meta: String(goal.valor_meta ?? ""),
+      valor_atual: String(goal.valor_atual ?? ""),
+      prazo: goal.prazo || ""
+    });
+  }
+
+  function updateProgressValue(goalId, value) {
+    setProgressValues((current) => ({
+      ...current,
+      [goalId]: value
+    }));
+  }
+
   async function handleSubmit(event) {
     event.preventDefault();
     setSaving(true);
@@ -66,30 +110,84 @@ export default function Goals() {
     setError("");
 
     try {
-      const payload = {
-        titulo: form.titulo,
-        valor_meta: Number(form.valor_meta),
-        valor_atual: Number(form.valor_atual),
-        prazo: form.prazo
-      };
+      const payload = buildPayload();
 
-      const data = await apiRequest("/goals/", {
-        method: "POST",
-        body: payload
-      });
+      if (editingGoalId) {
+        await updateGoal(editingGoalId, payload);
+        setMessage("Meta atualizada com sucesso.");
+      } else {
+        await createGoal(payload);
+        setMessage("Meta criada com sucesso.");
+      }
 
-      setMessage(data.mensagem);
-      setForm(initialForm);
+      resetForm();
       await loadGoals();
     } catch (erro) {
-      setError(erro.message || "Não foi possível criar a meta.");
+      setError(
+        erro.message ||
+          (editingGoalId
+            ? "Não foi possível atualizar a meta."
+            : "Não foi possível criar a meta.")
+      );
     } finally {
       setSaving(false);
     }
   }
 
-  const completedGoals = goals.filter((goal) => goal.status === "concluída")
-    .length;
+  async function handleProgressSubmit(event, goalId) {
+    event.preventDefault();
+    const value = Number(progressValues[goalId]);
+
+    if (!value || value <= 0) {
+      setMessage("");
+      setError("Informe um valor de progresso maior que zero.");
+      return;
+    }
+
+    setProgressSavingId(goalId);
+    setMessage("");
+    setError("");
+
+    try {
+      await updateGoalProgress(goalId, value);
+      setMessage("Progresso atualizado com sucesso.");
+      updateProgressValue(goalId, "");
+      await loadGoals();
+    } catch (erro) {
+      setError(erro.message || "Não foi possível atualizar o progresso.");
+    } finally {
+      setProgressSavingId(null);
+    }
+  }
+
+  async function handleDeleteGoal(goal) {
+    if (!window.confirm(`Excluir a meta "${goal.titulo}"?`)) {
+      return;
+    }
+
+    setDeletingGoalId(goal.id);
+    setMessage("");
+    setError("");
+
+    try {
+      await deleteGoal(goal.id);
+      setMessage("Meta excluída com sucesso.");
+
+      if (editingGoalId === goal.id) {
+        resetForm();
+      }
+
+      await loadGoals();
+    } catch (erro) {
+      setError(erro.message || "Não foi possível excluir a meta.");
+    } finally {
+      setDeletingGoalId(null);
+    }
+  }
+
+  const completedGoals = goals.filter((goal) =>
+    goal.status?.toLowerCase().includes("conclu")
+  ).length;
   const activeGoals = Math.max(userGoalsTotal - completedGoals, 0);
 
   return (
@@ -108,7 +206,20 @@ export default function Goals() {
 
       <div className="content-grid">
         <article className="data-card">
-          <h2>Nova meta</h2>
+          <div className="card-title-row">
+            <h2>{editingGoalId ? "Editar meta" : "Nova meta"}</h2>
+            {editingGoalId && (
+              <button
+                className="text-button"
+                type="button"
+                onClick={resetForm}
+                disabled={saving}
+              >
+                Cancelar
+              </button>
+            )}
+          </div>
+
           <form className="stack-form" onSubmit={handleSubmit}>
             <label>
               Título
@@ -158,7 +269,11 @@ export default function Goals() {
               />
             </label>
             <button className="primary-button" type="submit" disabled={saving}>
-              {saving ? "Salvando..." : "Criar meta"}
+              {saving
+                ? "Salvando..."
+                : editingGoalId
+                  ? "Atualizar meta"
+                  : "Criar meta"}
             </button>
           </form>
         </article>
@@ -214,6 +329,53 @@ export default function Goals() {
                   <div className="progress-track" aria-hidden="true">
                     <span style={{ width: `${getGoalProgress(goal)}%` }} />
                   </div>
+                </div>
+
+                <form
+                  className="goal-progress-form"
+                  onSubmit={(event) => handleProgressSubmit(event, goal.id)}
+                >
+                  <label>
+                    Adicionar progresso
+                    <input
+                      type="number"
+                      min="0.01"
+                      step="0.01"
+                      value={progressValues[goal.id] || ""}
+                      onChange={(event) =>
+                        updateProgressValue(goal.id, event.target.value)
+                      }
+                      placeholder="0,00"
+                    />
+                  </label>
+                  <button
+                    className="secondary-button"
+                    type="submit"
+                    disabled={progressSavingId === goal.id}
+                  >
+                    {progressSavingId === goal.id
+                      ? "Atualizando..."
+                      : "Atualizar progresso"}
+                  </button>
+                </form>
+
+                <div className="goal-actions">
+                  <button
+                    className="secondary-button"
+                    type="button"
+                    onClick={() => startEditing(goal)}
+                    disabled={saving || deletingGoalId === goal.id}
+                  >
+                    Editar
+                  </button>
+                  <button
+                    className="danger-button"
+                    type="button"
+                    onClick={() => handleDeleteGoal(goal)}
+                    disabled={deletingGoalId === goal.id}
+                  >
+                    {deletingGoalId === goal.id ? "Excluindo..." : "Excluir"}
+                  </button>
                 </div>
               </li>
             ))}

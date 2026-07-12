@@ -167,6 +167,36 @@ button:disabled {
   background: var(--mint-50);
 }
 
+.danger-button {
+  min-height: 42px;
+  border: 1px solid rgba(180, 35, 24, 0.25);
+  border-radius: 8px;
+  padding: 9px 15px;
+  color: var(--danger);
+  background: var(--danger-bg);
+  font-weight: 800;
+}
+
+.danger-button:hover {
+  border-color: rgba(180, 35, 24, 0.42);
+  background: #ffe5df;
+}
+
+.text-button {
+  min-height: 0;
+  border: 0;
+  border-radius: 8px;
+  padding: 3px 4px;
+  color: var(--green-800);
+  background: transparent;
+  font-weight: 900;
+}
+
+.text-button:hover {
+  color: var(--green-950);
+  background: var(--green-100);
+}
+
 .main-content {
   width: min(1160px, calc(100% - 32px));
   margin: 0 auto;
@@ -253,6 +283,13 @@ button:disabled {
 .login-form {
   align-self: stretch;
   align-content: center;
+}
+
+.form-footer {
+  margin: 0;
+  color: var(--gray-700);
+  font-weight: 750;
+  text-align: center;
 }
 
 .eyebrow {
@@ -416,6 +453,18 @@ select:focus {
   color: var(--green-950);
   font-size: 1.18rem;
   line-height: 1.25;
+}
+
+.card-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.card-title-row h2 {
+  margin: 0;
 }
 
 .tree-layout {
@@ -642,6 +691,10 @@ dd {
   gap: 12px;
 }
 
+.item-main {
+  min-width: 0;
+}
+
 .item-list strong,
 .item-list span,
 .goal-item strong,
@@ -741,6 +794,24 @@ dd {
   background: linear-gradient(90deg, var(--green-800), var(--green-500));
 }
 
+.goal-progress-form {
+  display: grid;
+  grid-template-columns: minmax(170px, 1fr) auto;
+  gap: 10px;
+  align-items: end;
+}
+
+.goal-progress-form input {
+  min-height: 42px;
+}
+
+.goal-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
 @media (max-width: 900px) {
   .navbar {
     display: grid;
@@ -810,9 +881,14 @@ dd {
 
   .item-list li,
   .goal-item-header,
-  .item-meta {
+  .item-meta,
+  .goal-progress-form {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .goal-progress-form {
+    grid-template-columns: 1fr;
   }
 
   .logout-button {

@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { apiRequest, saveToken } from "../services/api.js";
+import { loginUser, saveToken } from "../services/api.js";
 
-export default function Login({ onLogin }) {
+export default function Login({ onLogin, onShowRegister }) {
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
   const [loading, setLoading] = useState(false);
@@ -21,11 +21,7 @@ export default function Login({ onLogin }) {
     setError("");
 
     try {
-      const data = await apiRequest("/users/login", {
-        method: "POST",
-        auth: false,
-        body: { email, senha }
-      });
+      const data = await loginUser({ email, senha });
 
       saveToken(data.access_token);
       onLogin();
@@ -90,6 +86,17 @@ export default function Login({ onLogin }) {
           <button className="primary-button" type="submit" disabled={loading}>
             {loading ? "Entrando..." : "Entrar"}
           </button>
+
+          <p className="form-footer">
+            Ainda não tem conta?{" "}
+            <button
+              className="text-button"
+              type="button"
+              onClick={onShowRegister}
+            >
+              Criar conta
+            </button>
+          </p>
         </form>
       </section>
     </main>

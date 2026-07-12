@@ -1,5 +1,10 @@
 import { useEffect, useState } from "react";
-import { apiRequest } from "../services/api.js";
+import {
+  createTransaction,
+  deleteTransaction,
+  getTransactions,
+  getTransactionsSummary
+} from "../services/api.js";
 
 const initialForm = {
   tipo: "ganho",
@@ -26,6 +31,7 @@ export default function Transactions() {
   const [form, setForm] = useState(initialForm);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [deletingTransactionId, setDeletingTransactionId] = useState(null);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
@@ -35,14 +41,14 @@ export default function Transactions() {
 
     try {
       const [listData, summaryData] = await Promise.all([
-        apiRequest("/transactions/"),
-        apiRequest("/transactions/summary")
+        getTransactions(),
+        getTransactionsSummary()
       ]);
 
       setTransactions(listData.transacoes || []);
       setSummary(summaryData);
     } catch (erro) {
-      setError(erro.message || "Não foi possível carregar transações.");
+      setError(erro.message || "Erro ao carregar dados.");
     } finally {
       setLoading(false);
     }
@@ -68,23 +74,40 @@ export default function Transactions() {
     try {
       const payload = {
         tipo: form.tipo,
-        categoria: form.categoria,
+        categoria: form.categoria.trim(),
         valor: Number(form.valor),
-        descricao: form.descricao
+        descricao: form.descricao.trim() || null
       };
 
-      const data = await apiRequest("/transactions/", {
-        method: "POST",
-        body: payload
-      });
+      await createTransaction(payload);
 
-      setMessage(data.mensagem);
+      setMessage("Transação criada com sucesso.");
       setForm(initialForm);
       await loadTransactions();
     } catch (erro) {
       setError(erro.message || "Não foi possível criar a transação.");
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function handleDeleteTransaction(transaction) {
+    if (!window.confirm(`Excluir a transação "${transaction.categoria}"?`)) {
+      return;
+    }
+
+    setDeletingTransactionId(transaction.id);
+    setMessage("");
+    setError("");
+
+    try {
+      await deleteTransaction(transaction.id);
+      setMessage("Transação excluída com sucesso.");
+      await loadTransactions();
+    } catch (erro) {
+      setError(erro.message || "Não foi possível excluir a transação.");
+    } finally {
+      setDeletingTransactionId(null);
     }
   }
 
@@ -194,7 +217,7 @@ export default function Transactions() {
           <ul className="item-list">
             {transactions.map((transaction) => (
               <li className="transaction-item" key={transaction.id}>
-                <div>
+                <div className="item-main">
                   <strong>{transaction.categoria}</strong>
                   <span>{transaction.descricao || "Sem descrição"}</span>
                 </div>
@@ -206,6 +229,16 @@ export default function Transactions() {
                     {transaction.tipo === "gasto" ? "-" : "+"}
                     {formatCurrency(transaction.valor)}
                   </strong>
+                  <button
+                    className="danger-button"
+                    type="button"
+                    onClick={() => handleDeleteTransaction(transaction)}
+                    disabled={deletingTransactionId === transaction.id}
+                  >
+                    {deletingTransactionId === transaction.id
+                      ? "Excluindo..."
+                      : "Excluir"}
+                  </button>
                 </div>
               </li>
             ))}

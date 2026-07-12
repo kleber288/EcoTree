@@ -3,6 +3,7 @@ import Navbar from "./components/Navbar.jsx";
 import Dashboard from "./pages/Dashboard.jsx";
 import Goals from "./pages/Goals.jsx";
 import Login from "./pages/Login.jsx";
+import Register from "./pages/Register.jsx";
 import Transactions from "./pages/Transactions.jsx";
 import Tree from "./pages/Tree.jsx";
 import { clearToken, getToken } from "./services/api.js";
@@ -17,12 +18,14 @@ const pages = {
 export default function App() {
   const [token, setToken] = useState(() => getToken());
   const [activePage, setActivePage] = useState("dashboard");
+  const [authPage, setAuthPage] = useState("login");
 
   useEffect(() => {
     function handleLogout() {
       clearToken();
       setToken(null);
       setActivePage("dashboard");
+      setAuthPage("login");
     }
 
     window.addEventListener("auth:logout", handleLogout);
@@ -32,16 +35,27 @@ export default function App() {
   function handleLogin() {
     setToken(getToken());
     setActivePage("dashboard");
+    setAuthPage("login");
   }
 
   function handleLogout() {
     clearToken();
     setToken(null);
     setActivePage("dashboard");
+    setAuthPage("login");
   }
 
   if (!token) {
-    return <Login onLogin={handleLogin} />;
+    if (authPage === "register") {
+      return <Register onShowLogin={() => setAuthPage("login")} />;
+    }
+
+    return (
+      <Login
+        onLogin={handleLogin}
+        onShowRegister={() => setAuthPage("register")}
+      />
+    );
   }
 
   const ActivePage = pages[activePage] || Dashboard;
