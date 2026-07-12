@@ -1,0 +1,4 @@
+fastapi
+uvicorn
+pwdlib[argon2]
+python-jose[cryptography]
