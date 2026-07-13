@@ -38,13 +38,13 @@ def verificar_token(
     if credenciais is None:
         raise HTTPException(
             status_code=401,
-            detail="Token nao enviado."
+            detail="Token não enviado."
         )
 
     if credenciais.scheme.lower() != "bearer":
         raise HTTPException(
             status_code=401,
-            detail="Formato do token invalido."
+            detail="Formato do token inválido."
         )
 
     token = credenciais.credentials
@@ -58,7 +58,7 @@ def verificar_token(
         if user_id is None:
             raise HTTPException(
                 status_code=401,
-                detail="Token invalido."
+                detail="Token inválido."
             )
 
         return {
@@ -69,5 +69,5 @@ def verificar_token(
     except JWTError:
         raise HTTPException(
             status_code=401,
-            detail="Token invalido ou expirado."
+            detail="Token inválido ou expirado."
         )

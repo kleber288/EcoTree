@@ -60,7 +60,7 @@ def verificar_meta_pertence_ao_usuario(meta, user_id: int):
     if meta["user_id"] != user_id:
         raise HTTPException(
             status_code=403,
-            detail="Voce nao tem permissao para acessar esta meta."
+            detail="Você não tem permissão para acessar esta meta."
         )
 
 
@@ -111,7 +111,7 @@ def listar_metas_por_usuario(user_id: int):
         lista_metas.append(montar_meta(meta))
 
     return {
-        "mensagem": "Metas do usuario",
+        "mensagem": "Metas do usuário",
         "user_id": user_id,
         "total": len(lista_metas),
         "metas": lista_metas
@@ -198,7 +198,7 @@ def listar_metas_usuario(
     if user_id != user_id_logado:
         raise HTTPException(
             status_code=403,
-            detail="Voce nao tem permissao para acessar esta meta."
+            detail="Você não tem permissão para acessar estas metas."
         )
 
     verificar_usuario_existe(user_id)
@@ -239,7 +239,7 @@ def buscar_meta(
     verificar_meta_pertence_ao_usuario(meta, user_id)
 
     return {
-        "mensagem": "Meta encontrada",
+        "mensagem": "Meta encontrada.",
         "meta": montar_meta(meta)
     }
 

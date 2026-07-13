@@ -154,6 +154,6 @@ def login_usuario(dados_login: UserLogin):
 @router.get("/me")
 def meu_perfil(usuario_logado: dict = Depends(verificar_token)):
     return {
-        "mensagem": "Usuario autenticado",
+        "mensagem": "Usuário autenticado",
         "usuario": usuario_logado
     }

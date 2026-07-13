@@ -64,7 +64,7 @@ def listar_transacoes_por_usuario(user_id: int):
         })
 
     return {
-        "mensagem": "Transacoes do usuario",
+        "mensagem": "Transações do usuário",
         "user_id": user_id,
         "total": len(lista_transacoes),
         "transacoes": lista_transacoes
@@ -106,7 +106,7 @@ def resumo_transacoes_por_usuario(user_id: int):
     saldo = total_ganhos - total_gastos
 
     return {
-        "mensagem": "Resumo financeiro do usuario",
+        "mensagem": "Resumo financeiro do usuário",
         "user_id": user_id,
         "total_ganhos": total_ganhos,
         "total_gastos": total_gastos,
@@ -131,7 +131,7 @@ def buscar_transacao_por_id(transacao_id: int):
     if transacao is None:
         raise HTTPException(
             status_code=404,
-            detail="Transacao nao encontrada."
+            detail="Transação não encontrada."
         )
 
     return transacao
@@ -145,7 +145,7 @@ def verificar_transacao_pertence_ao_usuario(
     if transacao["user_id"] != user_id:
         raise HTTPException(
             status_code=403,
-            detail=f"Voce nao tem permissao para {acao} esta transacao."
+            detail=f"Você não tem permissão para {acao} esta transação."
         )
 
 
@@ -231,7 +231,7 @@ def listar_transacoes_usuario(
     if user_id != user_id_logado:
         raise HTTPException(
             status_code=403,
-            detail="Voce nao tem permissao para acessar estas transacoes."
+            detail="Você não tem permissão para acessar estas transações."
         )
 
     return listar_transacoes_por_usuario(user_id)
@@ -255,7 +255,7 @@ def resumo_transacoes(
     if user_id != user_id_logado:
         raise HTTPException(
             status_code=403,
-            detail="Voce nao tem permissao para acessar este resumo."
+            detail="Você não tem permissão para acessar este resumo."
         )
 
     return resumo_transacoes_por_usuario(user_id)

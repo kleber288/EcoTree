@@ -3,7 +3,6 @@ import {
   createGoal,
   deleteGoal,
   getGoals,
-  getUserGoals,
   updateGoal,
   updateGoalProgress
 } from "../services/api.js";
@@ -45,13 +44,11 @@ export default function Goals() {
     setError("");
 
     try {
-      const [allGoalsData, userGoalsData] = await Promise.all([
-        getGoals(),
-        getUserGoals()
-      ]);
+      const allGoalsData = await getGoals();
+      const loadedGoals = allGoalsData.metas || [];
 
-      setGoals(allGoalsData.metas || []);
-      setUserGoalsTotal(userGoalsData.total || 0);
+      setGoals(loadedGoals);
+      setUserGoalsTotal(allGoalsData.total ?? loadedGoals.length);
     } catch (erro) {
       setError(erro.message || "Erro ao carregar dados.");
     } finally {
