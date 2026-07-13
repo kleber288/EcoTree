@@ -12,7 +12,8 @@ router = APIRouter(
 
 
 @router.get("/")
-def listar_usuarios():
+def listar_usuarios(usuario_logado: dict = Depends(verificar_token)):
+    # Futuramente, restringir esta listagem para usuarios administradores.
     conn = conectar()
     cursor = conn.cursor()
 
