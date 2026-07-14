@@ -1,19 +1,22 @@
 # EcoTree
 
-EcoTree é uma aplicação web voltada para sustentabilidade, gamificação e acompanhamento de hábitos, ações e metas ecológicas. A proposta do projeto é unir controle pessoal, metas e uma árvore virtual que evolui conforme o usuário registra ações no sistema.
+EcoTree e uma aplicacao web para sustentabilidade, gamificacao e acompanhamento de habitos, registros financeiros e metas ecologicas. O sistema combina uma API FastAPI com uma interface React/Vite para permitir que cada usuario acompanhe sua propria jornada verde por meio de login, painel, arvore virtual, transacoes, metas e perfil.
 
-No EcoTree, o usuário pode criar uma conta, fazer login, acompanhar o painel principal, visualizar e atualizar sua árvore, registrar transações e gerenciar metas. As principais rotas do sistema são protegidas por autenticação JWT, garantindo que cada usuário acesse apenas seus próprios dados.
+## Objetivo
 
-## Tecnologias utilizadas
+O objetivo do EcoTree e ajudar o usuario a registrar pequenas acoes e evolucoes pessoais, transformar esses registros em progresso visual e manter os dados protegidos por autenticacao JWT. O frontend nao envia `user_id` manual nas rotas principais; a identidade do usuario e derivada do token enviado ao backend.
+
+## Tecnologias
 
 ### Backend
 
 - Python
 - FastAPI
 - SQLite
-- JWT com `python-jose`
 - Uvicorn
-- `pwdlib[argon2]` para hash e verificação de senha
+- JWT com `python-jose`
+- `pwdlib[argon2]` para hash e verificacao de senha
+- Swagger UI gerado pelo FastAPI
 
 ### Frontend
 
@@ -21,58 +24,53 @@ No EcoTree, o usuário pode criar uma conta, fazer login, acompanhar o painel pr
 - Vite
 - JavaScript
 - CSS
+- `localStorage` apenas para armazenar o token JWT atual
 
-### Outros
+## Funcionalidades principais
 
-- Git
-- PowerShell/terminal
-- Swagger UI para documentação e testes da API
+- Cadastro de usuario.
+- Login com token JWT.
+- Logout.
+- Dashboard autenticado com resumo da jornada.
+- Visualizacao e atualizacao da arvore EcoTree.
+- Adicao de pontos na arvore.
+- Cadastro, listagem e exclusao de transacoes.
+- Resumo financeiro das transacoes do usuario autenticado.
+- Cadastro, edicao, progresso e exclusao de metas.
+- Perfil autenticado com resumo de conta, arvore, metas e registros.
 
-## Estrutura de pastas
+## Estrutura resumida
 
 ```txt
 Projeto_EcoTree/
   EcoTree-backend/
+    auth.py
+    database.py
+    main.py
+    schemas.py
+    tree_service.py
+    requirements.txt
+    routes/
+      users.py
+      tree.py
+      transactions.py
+      goals.py
   EcoTree-frontend/
+    index.html
+    package.json
+    vite.config.js
+    src/
+      App.jsx
+      main.jsx
+      services/
+        api.js
+      components/
+      pages/
+      styles.css
   .gitignore
   README.md
+  checklist-entrega.md
 ```
-
-O diretório `EcoTree-backend/` contém a API em FastAPI, as rotas, os schemas, a autenticação JWT, a conexão SQLite e os serviços relacionados à árvore.
-
-O diretório `EcoTree-frontend/` contém a interface em React com Vite, as páginas da aplicação, os estilos CSS, a navegação e a camada centralizada de comunicação com a API.
-
-## Funcionalidades principais
-
-- Cadastro de usuário.
-- Login com token JWT.
-- Logout.
-- Dashboard com visão geral do usuário.
-- Visualização da árvore do usuário.
-- Adição de pontos na árvore.
-- Atualização/recalculo da árvore.
-- Criação e exclusão de transações.
-- Resumo financeiro de transações.
-- Criação, edição, atualização de progresso e exclusão de metas.
-- Proteção de rotas por usuário autenticado.
-
-## Segurança e autenticação
-
-O fluxo de autenticação do EcoTree usa JWT.
-
-1. O usuário faz login em `POST /users/login`.
-2. O backend valida email e senha.
-3. O backend retorna um `access_token`.
-4. O frontend salva o token no `localStorage`.
-5. As requisições protegidas enviam o token no cabeçalho:
-
-```txt
-Authorization: Bearer TOKEN
-```
-
-No backend, o usuário é identificado a partir do token por meio da função `verificar_token`. Assim, as rotas principais não dependem mais de `user_id` manual enviado pelo frontend.
-
-As rotas sensíveis de árvore, transações, metas e listagem de usuários estão protegidas por JWT. Para transações e metas, o backend também valida se o recurso pertence ao usuário autenticado antes de permitir acesso, alteração ou exclusão.
 
 ## Como rodar o backend
 
@@ -82,10 +80,16 @@ Entre na pasta do backend:
 cd D:\Projeto_EcoTree\EcoTree-backend
 ```
 
-Ative o ambiente virtual:
+Ative o ambiente virtual, se ja existir:
 
 ```bash
 .\venv\Scripts\activate
+```
+
+Instale dependencias em um ambiente novo:
+
+```bash
+pip install -r requirements.txt
 ```
 
 Inicie a API:
@@ -94,28 +98,17 @@ Inicie a API:
 uvicorn main:app --reload
 ```
 
-Outra opção é executar o Uvicorn usando diretamente o Python do ambiente virtual:
+Ou rode diretamente pelo Python do ambiente virtual:
 
 ```bash
 .\venv\Scripts\python.exe -m uvicorn main:app --host 127.0.0.1 --port 8000
 ```
 
-A API fica disponível em:
+URLs principais:
 
 ```txt
-http://127.0.0.1:8000
-```
-
-A documentação Swagger fica disponível em:
-
-```txt
-http://127.0.0.1:8000/docs
-```
-
-Se for necessário instalar as dependências do backend em um novo ambiente:
-
-```bash
-pip install -r requirements.txt
+API:     http://127.0.0.1:8000
+Swagger: http://127.0.0.1:8000/docs
 ```
 
 ## Como rodar o frontend
@@ -126,7 +119,7 @@ Entre na pasta do frontend:
 cd D:\Projeto_EcoTree\EcoTree-frontend
 ```
 
-Instale as dependências:
+Instale as dependencias:
 
 ```bash
 npm install
@@ -138,79 +131,107 @@ Inicie o servidor de desenvolvimento:
 npm run dev
 ```
 
-O frontend fica disponível em:
+URL padrao:
 
 ```txt
 http://127.0.0.1:5173
 ```
 
-Durante o desenvolvimento, o Vite usa proxy para enviar chamadas de `/api` para:
+Durante o desenvolvimento, o Vite envia chamadas de `/api` para `http://127.0.0.1:8000` por proxy. Se necessario, o frontend tambem aceita `VITE_API_URL` em `.env`, conforme `EcoTree-frontend/.env.example`.
 
-```txt
-http://127.0.0.1:8000
-```
+## Endpoints principais
 
-## Fluxo de uso
+### Geral
 
-1. Abrir o frontend em `http://127.0.0.1:5173`.
-2. Criar uma conta na tela de cadastro.
-3. Fazer login com email e senha.
-4. Acessar o dashboard.
-5. Usar a página da árvore para visualizar status, adicionar pontos e atualizar a árvore.
-6. Usar a página de transações para registrar entradas/saídas e excluir registros.
-7. Usar a página de metas para criar, editar, atualizar progresso e excluir metas.
-8. Fazer logout ao finalizar o uso.
+- `GET /` - status publico da API.
 
-## Principais endpoints
+### Usuarios
 
-### Usuários
+- `POST /users/register` - cria usuario e arvore inicial.
+- `POST /users/login` - autentica usuario e retorna `access_token`.
+- `GET /users/me` - retorna o usuario autenticado pelo token.
+- `GET /users/` - lista usuarios; exige JWT.
 
-- `POST /users/register` - cadastra um novo usuário.
-- `POST /users/login` - autentica o usuário e retorna o token JWT.
-- `GET /users/me` - retorna dados do usuário autenticado.
-- `GET /users/` - lista usuários, protegido por JWT.
+### Arvore
 
-### Árvore
+- `GET /tree/status` - retorna a arvore do usuario autenticado.
+- `GET /tree/me` - rota equivalente para arvore do usuario autenticado.
+- `PATCH /tree/add-points` - adiciona pontos na arvore autenticada.
+- `PUT /tree/update` - recalcula a arvore a partir dos dados do usuario.
+- `GET /tree/` - rota publica informativa sobre o modulo de arvore.
 
-- `GET /tree/status` - retorna o status da árvore do usuário autenticado.
-- `PATCH /tree/add-points` - adiciona pontos à árvore do usuário autenticado.
-- `PUT /tree/update` - recalcula/atualiza a árvore do usuário autenticado.
+### Transacoes
 
-### Transações
-
-- `GET /transactions/` - lista as transações do usuário autenticado.
-- `GET /transactions/summary` - retorna o resumo financeiro do usuário autenticado.
-- `POST /transactions/` - cria uma nova transação para o usuário autenticado.
-- `DELETE /transactions/{transacao_id}` - exclui uma transação do usuário autenticado.
+- `GET /transactions/` - lista transacoes do usuario autenticado.
+- `POST /transactions/` - cria transacao para o usuario autenticado.
+- `GET /transactions/summary` - retorna resumo financeiro do usuario autenticado.
+- `DELETE /transactions/{transacao_id}` - exclui transacao do usuario autenticado.
+- `GET /transactions/user` - rota autenticada de compatibilidade para o usuario logado.
+- `GET /transactions/user/{user_id}` - rota autenticada de compatibilidade com checagem de dono.
+- `GET /transactions/summary/{user_id}` - rota autenticada de compatibilidade com checagem de dono.
 
 ### Metas
 
-- `GET /goals/` - lista as metas do usuário autenticado.
-- `POST /goals/` - cria uma nova meta para o usuário autenticado.
-- `GET /goals/{goal_id}` - busca uma meta específica do usuário autenticado.
-- `PUT /goals/{goal_id}` - atualiza uma meta do usuário autenticado.
+- `GET /goals/` - lista metas do usuario autenticado.
+- `POST /goals/` - cria meta para o usuario autenticado.
+- `GET /goals/{goal_id}` - busca meta do usuario autenticado.
+- `PUT /goals/{goal_id}` - atualiza meta do usuario autenticado.
 - `PATCH /goals/{goal_id}/progress` - adiciona progresso a uma meta.
-- `DELETE /goals/{goal_id}` - exclui uma meta do usuário autenticado.
+- `DELETE /goals/{goal_id}` - exclui meta do usuario autenticado.
+- `GET /goals/user` - rota autenticada de compatibilidade para o usuario logado.
+- `GET /goals/user/{user_id}` - rota autenticada de compatibilidade com checagem de dono.
 
-## Observações importantes
+## Autenticacao
 
-- O banco de dados usado pelo projeto é SQLite local.
-- O arquivo do banco é criado/usado pelo backend como `ecotree.db`.
-- A `SECRET_KEY` atual está definida diretamente no código e é adequada apenas para desenvolvimento.
-- Para produção, o ideal é mover a `SECRET_KEY` para uma variável de ambiente.
-- A rota `GET /users/` já exige JWT, mas futuramente o ideal é restringir essa listagem a usuários administradores.
-- O frontend não envia mais `user_id` manual para as rotas principais; o backend identifica o usuário pelo token.
+O login em `POST /users/login` retorna um JWT. O frontend salva o token em `localStorage` na chave `token` e a camada `src/services/api.js` envia:
 
-## Próximas melhorias
+```txt
+Authorization: Bearer TOKEN
+```
 
-- Criar sistema simples de admin.
-- Fazer deploy online do backend e do frontend.
-- Melhorar a integração visual com Figma.
-- Criar histórico mais detalhado de ações sustentáveis.
-- Implementar recuperação de senha.
-- Melhorar a responsividade em diferentes tamanhos de tela.
-- Adicionar testes automatizados no backend e no frontend.
+No backend, `verificar_token` valida o bearer token e retorna `user_id` e `email`. As rotas principais de arvore, transacoes, metas e perfil usam essa identidade autenticada.
 
-## Validação desta documentação
+## Dados simulados conhecidos
 
-Esta etapa alterou apenas a documentação do projeto. Não foi necessário iniciar backend ou frontend, porque nenhuma regra de negócio, rota, banco de dados ou interface foi modificada.
+O projeto mantem alguns dados visuais simulados apenas no frontend:
+
+- No perfil, a conquista "Guardiao Verde" e exibida como conquista recente.
+- No perfil, a sequencia de "12 dias" e exibida como dado visual fixo.
+
+Esses valores nao vem do backend nesta etapa e devem ser tratados como conteudo demonstrativo para apresentacao.
+
+## Versionamento e arquivos locais
+
+Arquivos de ambiente, dependencias, build, caches, banco local e logs nao devem entrar no versionamento:
+
+- `.env`
+- `.env.local`
+- `node_modules/`
+- `dist/`
+- `venv/`
+- `__pycache__/`
+- `*.pyc`
+- `*.db`
+- `*.sqlite`
+- `*.sqlite3`
+- `*.log`
+
+O banco local usado em desenvolvimento e `EcoTree-backend/ecotree.db`. Ele deve permanecer local.
+
+## Observacoes tecnicas da entrega
+
+- `EcoTree-backend/models.py` esta vazio e pode ser removido em uma etapa futura se nao for adotado.
+- `ActionButton`, `MetricCard` e `ProgressBar` existem como componentes de UI, mas nao estao em uso nas telas atuais.
+- Existem pequenas duplicacoes de helpers de usuario entre rotas e servicos do backend; a consolidacao pode ficar para uma refatoracao futura.
+- A `SECRET_KEY` ainda esta definida diretamente em `auth.py`; para producao, o ideal e externalizar essa configuracao.
+- As rotas antigas com `user_id` em transacoes e metas permanecem protegidas por JWT e checagem de dono por compatibilidade.
+
+## Proximos passos futuros
+
+- Externalizar configuracoes sensiveis do backend por variaveis de ambiente.
+- Adicionar testes automatizados para backend e frontend.
+- Criar regras de administracao para `GET /users/`.
+- Avaliar remocao de rotas de compatibilidade apos estabilizar consumidores.
+- Remover componentes nao usados caso nao sejam aproveitados.
+- Preparar deploy do frontend e backend.
+- Persistir no backend conquistas e sequencias hoje exibidas como dados simulados.

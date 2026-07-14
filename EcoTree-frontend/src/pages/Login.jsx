@@ -33,62 +33,96 @@ export default function Login({ onLogin, onShowRegister }) {
   }
 
   return (
-    <main className="login-screen">
-      <section className="login-card" aria-labelledby="login-title">
-        <div className="login-copy">
-          <div className="brand-lockup">
-            <span className="brand-mark" aria-hidden="true">E</span>
+    <main className="auth-screen auth-screen-login">
+      <section className="auth-panel" aria-labelledby="login-title">
+        <div className="auth-hero">
+          <div className="auth-brand-row">
+            <span className="brand-mark auth-brand-mark" aria-hidden="true">E</span>
             <div>
-              <span className="eyebrow">Projeto EcoTree</span>
-              <strong>EcoTree</strong>
+              <span className="auth-kicker">EcoTree</span>
+              <strong>Jornada verde</strong>
             </div>
           </div>
 
-          <h1 id="login-title">Entre e acompanhe sua evolução verde</h1>
-          <p>
-            Pequenas escolhas financeiras também podem cultivar hábitos mais
-            sustentáveis.
-          </p>
-
-          <div className="login-highlights" aria-label="Recursos do EcoTree">
-            <span>Árvore em evolução</span>
-            <span>Transações organizadas</span>
-            <span>Metas com progresso</span>
+          <div className="auth-tree auth-tree-grown" aria-hidden="true">
+            <span className="auth-tree-glow" />
+            <span className="auth-tree-crown crown-left" />
+            <span className="auth-tree-crown crown-center" />
+            <span className="auth-tree-crown crown-right" />
+            <span className="auth-tree-trunk" />
+            <span className="auth-tree-ground" />
           </div>
+
+          <div className="auth-hero-copy">
+            <h1>Seu progresso sustentável começa aqui.</h1>
+            <p>
+              Entre para acompanhar sua árvore, organizar registros e transformar
+              pequenas escolhas em evolução diária.
+            </p>
+          </div>
+
+          <div className="auth-pill">Continue sua jornada verde</div>
         </div>
 
-        <form className="stack-form login-form" onSubmit={handleSubmit}>
-          <label>
+        <form
+          className="auth-card"
+          onSubmit={handleSubmit}
+          aria-describedby={error ? "login-form-error" : undefined}
+        >
+          <div className="auth-card-heading">
+            <span className="eyebrow">Login</span>
+            <h2 id="login-title">Bem-vindo de volta</h2>
+            <p>Use seu email e senha para continuar evoluindo sua EcoTree.</p>
+          </div>
+
+          <label htmlFor="login-email">
             Email
             <input
+              id="login-email"
               type="email"
               value={email}
               onChange={(event) => setEmail(event.target.value)}
-              placeholder="kleber@email.com"
+              placeholder="voce@email.com"
+              autoComplete="email"
+              aria-describedby={error ? "login-form-error" : undefined}
+              aria-invalid={Boolean(error)}
               required
             />
           </label>
 
-          <label>
+          <label htmlFor="login-senha">
             Senha
             <input
+              id="login-senha"
               type="password"
               value={senha}
               onChange={(event) => setSenha(event.target.value)}
-              placeholder="123456"
+              placeholder="mínimo de 6 caracteres"
+              autoComplete="current-password"
               minLength="6"
+              aria-describedby={error ? "login-form-error" : undefined}
+              aria-invalid={Boolean(error)}
               required
             />
           </label>
 
-          {error && <p className="alert error" role="alert">{error}</p>}
+          {error && (
+            <p className="alert error auth-alert" id="login-form-error" role="alert">
+              {error}
+            </p>
+          )}
 
-          <button className="primary-button" type="submit" disabled={loading}>
-            {loading ? "Entrando..." : "Entrar"}
+          <button
+            className="primary-button auth-submit"
+            type="submit"
+            disabled={loading}
+            aria-busy={loading}
+          >
+            {loading ? "Entrando..." : "Entrar no EcoTree"}
           </button>
 
-          <p className="form-footer">
-            Ainda não tem conta?{" "}
+          <p className="auth-switch">
+            Ainda não tem conta?
             <button
               className="text-button"
               type="button"

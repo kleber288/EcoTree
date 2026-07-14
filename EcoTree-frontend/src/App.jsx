@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
-import Navbar from "./components/Navbar.jsx";
+import AppLayout from "./components/AppLayout.jsx";
 import Dashboard from "./pages/Dashboard.jsx";
 import Goals from "./pages/Goals.jsx";
 import Login from "./pages/Login.jsx";
+import Profile from "./pages/Profile.jsx";
 import Register from "./pages/Register.jsx";
 import Transactions from "./pages/Transactions.jsx";
 import Tree from "./pages/Tree.jsx";
@@ -12,7 +13,8 @@ const pages = {
   dashboard: Dashboard,
   tree: Tree,
   transactions: Transactions,
-  goals: Goals
+  goals: Goals,
+  profile: Profile
 };
 
 export default function App() {
@@ -61,15 +63,12 @@ export default function App() {
   const ActivePage = pages[activePage] || Dashboard;
 
   return (
-    <div className="app-shell">
-      <Navbar
-        activePage={activePage}
-        onNavigate={setActivePage}
-        onLogout={handleLogout}
-      />
-      <main className="main-content">
-        <ActivePage onNavigate={setActivePage} />
-      </main>
-    </div>
+    <AppLayout
+      activePage={activePage}
+      onNavigate={setActivePage}
+      onLogout={handleLogout}
+    >
+      <ActivePage onNavigate={setActivePage} onLogout={handleLogout} />
+    </AppLayout>
   );
 }

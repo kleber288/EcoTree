@@ -51,76 +51,124 @@ export default function Register({ onShowLogin }) {
   }
 
   return (
-    <main className="login-screen">
-      <section className="login-card" aria-labelledby="register-title">
-        <div className="login-copy">
-          <div className="brand-lockup">
-            <span className="brand-mark" aria-hidden="true">E</span>
+    <main className="auth-screen auth-screen-register">
+      <section className="auth-panel" aria-labelledby="register-title">
+        <div className="auth-hero">
+          <div className="auth-brand-row">
+            <span className="brand-mark auth-brand-mark" aria-hidden="true">E</span>
             <div>
-              <span className="eyebrow">Projeto EcoTree</span>
-              <strong>EcoTree</strong>
+              <span className="auth-kicker">Criar EcoTree</span>
+              <strong>Comece simples</strong>
             </div>
           </div>
 
-          <h1 id="register-title">Crie sua conta e comece sua evolução verde</h1>
-          <p>
-            Cadastre seus dados para acompanhar metas, transações e o crescimento
-            da sua árvore em um só lugar.
-          </p>
-
-          <div className="login-highlights" aria-label="Recursos do EcoTree">
-            <span>Cadastro rápido</span>
-            <span>Acesso com JWT</span>
-            <span>Dados protegidos</span>
+          <div className="auth-tree auth-tree-sprout" aria-hidden="true">
+            <span className="auth-tree-glow" />
+            <span className="sprout-stem" />
+            <span className="sprout-leaf leaf-left" />
+            <span className="sprout-leaf leaf-right" />
+            <span className="auth-tree-ground" />
           </div>
+
+          <div className="auth-hero-copy">
+            <h1>Crie sua conta e cultive novos hábitos.</h1>
+            <p>
+              Cadastre-se para acompanhar metas, registros e a evolução da sua
+              árvore em um só lugar.
+            </p>
+          </div>
+
+          <div className="auth-pill">Dados protegidos por login com JWT</div>
         </div>
 
-        <form className="stack-form login-form" onSubmit={handleSubmit}>
-          <label>
+        <form
+          className="auth-card"
+          onSubmit={handleSubmit}
+          aria-describedby={
+            error ? "register-form-error" : message ? "register-form-success" : undefined
+          }
+        >
+          <div className="auth-card-heading">
+            <span className="eyebrow">Cadastro</span>
+            <h2 id="register-title">Vamos começar</h2>
+            <p>Preencha seus dados para entrar na jornada EcoTree.</p>
+          </div>
+
+          <label htmlFor="register-nome">
             Nome
             <input
+              id="register-nome"
               type="text"
               value={form.nome}
               onChange={(event) => updateForm("nome", event.target.value)}
               placeholder="Seu nome"
+              autoComplete="name"
               minLength="3"
               required
             />
           </label>
 
-          <label>
+          <label htmlFor="register-email">
             Email
             <input
+              id="register-email"
               type="email"
               value={form.email}
               onChange={(event) => updateForm("email", event.target.value)}
               placeholder="voce@email.com"
+              autoComplete="email"
               minLength="5"
+              aria-describedby={error ? "register-form-error" : undefined}
+              aria-invalid={Boolean(error)}
               required
             />
           </label>
 
-          <label>
+          <label htmlFor="register-senha">
             Senha
             <input
+              id="register-senha"
               type="password"
               value={form.senha}
               onChange={(event) => updateForm("senha", event.target.value)}
               placeholder="mínimo de 6 caracteres"
+              autoComplete="new-password"
               minLength="6"
               required
             />
           </label>
 
-          {error && <p className="alert error" role="alert">{error}</p>}
-          {message && <p className="alert success">{message}</p>}
+          {error && (
+            <p
+              className="alert error auth-alert"
+              id="register-form-error"
+              role="alert"
+            >
+              {error}
+            </p>
+          )}
+          {message && (
+            <p
+              className="alert success auth-alert"
+              id="register-form-success"
+              role="status"
+              aria-live="polite"
+            >
+              {message}
+            </p>
+          )}
 
-          <button className="primary-button" type="submit" disabled={loading}>
+          <button
+            className="primary-button auth-submit"
+            type="submit"
+            disabled={loading}
+            aria-busy={loading}
+          >
             {loading ? "Criando conta..." : "Criar conta"}
           </button>
 
-          <p className="form-footer">
-            Já tenho conta{" "}
+          <p className="auth-switch">
+            Já tenho conta
             <button className="text-button" type="button" onClick={onShowLogin}>
               Entrar
             </button>
