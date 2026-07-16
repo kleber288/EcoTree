@@ -115,6 +115,18 @@ Pasta do projeto:
 EcoTree-frontend
 ```
 
+O frontend tambem possui `EcoTree-frontend/vercel.json` para manter o app Vite como SPA na Vercel, redirecionando rotas do navegador para `index.html`.
+
+Configuracao recomendada na Vercel:
+
+```txt
+Root Directory: EcoTree-frontend
+Framework Preset: Vite
+Install Command: npm install
+Build Command: npm run build
+Output Directory: dist
+```
+
 Comando de instalacao:
 
 ```bash
@@ -140,6 +152,52 @@ VITE_API_URL=https://sua-api-publica.com
 ```
 
 Use a URL publica do backend, sem barra final.
+
+### Deploy do frontend na Vercel
+
+1. Acesse o painel da Vercel.
+2. Conecte sua conta do GitHub, se ainda nao estiver conectada.
+3. Clique em Add New > Project.
+4. Importe o repositorio do EcoTree.
+5. Em Root Directory, selecione `EcoTree-frontend`.
+6. Em Framework Preset, selecione `Vite`.
+7. Confirme Install Command como `npm install`.
+8. Confirme Build Command como `npm run build`.
+9. Confirme Output Directory como `dist`.
+10. Em Environment Variables, adicione `VITE_API_URL` com a URL HTTPS real do backend no Render, sem barra final.
+11. Clique em Deploy.
+12. Ao finalizar, copie a URL publica da Vercel, por exemplo `https://ecotree.vercel.app`.
+
+Se a URL do backend no Render ainda nao estiver disponivel, nao publique o frontend final. A variavel `VITE_API_URL` precisa apontar para a API real para cadastro, login, dashboard, arvore, transacoes, metas e perfil funcionarem online.
+
+### Atualizar CORS do backend depois da Vercel
+
+Depois que a Vercel gerar a URL publica do frontend, volte ao Render e atualize `ECOTREE_FRONTEND_ORIGINS` no backend para incluir essa origem:
+
+```env
+ECOTREE_FRONTEND_ORIGINS=https://sua-url.vercel.app,http://127.0.0.1:5173,http://localhost:5173,http://127.0.0.1:4173,http://localhost:4173
+```
+
+Depois de salvar a variavel no Render, faça redeploy ou restart do backend para que o CORS use a nova configuracao.
+
+### Testes do frontend publicado
+
+1. Abra a URL publica da Vercel em HTTPS.
+2. Abra o console do navegador e confirme que nao ha erros de JavaScript.
+3. Cadastre um usuario de teste.
+4. Faca login.
+5. Abra dashboard e perfil para validar indiretamente `/users/me`.
+6. Teste arvore, transacoes, metas e logout.
+7. Confira se o app continua instalavel como PWA.
+
+Problemas comuns:
+
+- CORS: a URL da Vercel nao esta em `ECOTREE_FRONTEND_ORIGINS`.
+- API incorreta: `VITE_API_URL` esta com placeholder, barra final problematica ou URL diferente da API Render.
+- Backend dormindo: no plano gratuito do Render, a primeira chamada pode demorar.
+- SQLite sem persistencia: dados podem sumir se o servico reiniciar sem disco persistente.
+- Cache antigo: o service worker pode manter arquivos antigos; limpe dados do site ou force novo deploy.
+- Mixed content: o frontend em HTTPS deve chamar backend em HTTPS, nunca `http://`.
 
 ## 3. Configuracao local
 
