@@ -5,9 +5,9 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import JWTError, jwt
 from pwdlib import PasswordHash
 
-SECRET_KEY = "ecotree-chave-secreta-temporaria"
+from config import ACCESS_TOKEN_EXPIRE_MINUTES, SECRET_KEY
+
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 60
 
 password_hash = PasswordHash.recommended()
 security = HTTPBearer(auto_error=False)

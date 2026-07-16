@@ -1,11 +1,21 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from routes import users, transactions, goals, tree
+from config import ALLOWED_ORIGINS
 from database import criar_tabelas
 
 app = FastAPI(
     title="EcoTree API",
     description="Backend do aplicativo EcoTree - Jogando o Verde",
     version="1.0.0"
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=ALLOWED_ORIGINS,
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type"],
 )
 
 

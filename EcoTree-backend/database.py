@@ -1,8 +1,10 @@
 import sqlite3
 
+from config import DATABASE_FILE
+
 
 def conectar():
-    conn = sqlite3.connect("ecotree.db")
+    conn = sqlite3.connect(DATABASE_FILE)
     conn.row_factory = sqlite3.Row
     return conn
 

@@ -18,6 +18,9 @@ dist/
 # Ambiente
 .env
 .env.local
+.env.*.local
+.env.*
+!.env.example
 
 # Sistema
 .DS_Store

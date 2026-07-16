@@ -16,6 +16,7 @@ O objetivo do EcoTree e ajudar o usuario a registrar pequenas acoes e evolucoes 
 - Uvicorn
 - JWT com `python-jose`
 - `pwdlib[argon2]` para hash e verificacao de senha
+- `python-dotenv` para carregar variaveis de ambiente locais
 - Swagger UI gerado pelo FastAPI
 
 ### Frontend
@@ -44,7 +45,9 @@ O objetivo do EcoTree e ajudar o usuario a registrar pequenas acoes e evolucoes 
 ```txt
 Projeto_EcoTree/
   EcoTree-backend/
+    .env.example
     auth.py
+    config.py
     database.py
     main.py
     schemas.py
@@ -56,8 +59,10 @@ Projeto_EcoTree/
       transactions.py
       goals.py
   EcoTree-frontend/
+    .env.example
     index.html
     package.json
+    public/
     vite.config.js
     src/
       App.jsx
@@ -68,6 +73,7 @@ Projeto_EcoTree/
       pages/
       styles.css
   .gitignore
+  DEPLOY.md
   README.md
   checklist-entrega.md
 ```
@@ -138,6 +144,118 @@ http://127.0.0.1:5173
 ```
 
 Durante o desenvolvimento, o Vite envia chamadas de `/api` para `http://127.0.0.1:8000` por proxy. Se necessario, o frontend tambem aceita `VITE_API_URL` em `.env`, conforme `EcoTree-frontend/.env.example`.
+
+## Versao PWA
+
+O frontend do EcoTree tambem pode ser gerado como PWA, ou seja, uma versao instalavel pelo navegador em celulares e computadores. Essa versao inclui manifest, icones do app e service worker para cache basico dos arquivos estaticos do frontend. As chamadas reais para a API continuam acontecendo normalmente e nao devem ser tratadas como dados offline.
+
+Para testar localmente:
+
+```bash
+cd D:\Projeto_EcoTree\EcoTree-frontend
+npm install
+npm run build
+npm run preview
+```
+
+Depois acesse a URL exibida pelo Vite Preview, normalmente:
+
+```txt
+http://127.0.0.1:4173
+```
+
+No DevTools do navegador, abra a aba Application e confira:
+
+- Manifest com nome EcoTree, cores e icones.
+- Service Worker registrado.
+- Opcao de instalacao do app disponivel no navegador.
+
+Para instalar no Android:
+
+- Abra o EcoTree pelo Chrome no celular.
+- Toque no menu do navegador.
+- Escolha "Instalar app" ou "Adicionar a tela inicial".
+- Confirme a instalacao.
+
+Para instalar no iPhone:
+
+- Abra o EcoTree pelo Safari.
+- Toque no botao de compartilhamento.
+- Escolha "Adicionar a Tela de Inicio".
+- Confirme o nome EcoTree.
+
+Observacao: para usar o app fora do computador de desenvolvimento, o backend precisa estar acessivel na rede local ou publicado online. Se o celular abrir apenas o frontend, mas nao conseguir acessar a API, login, perfil, arvore, metas e registros nao conseguirao carregar dados reais.
+
+## Preparacao para deploy
+
+O EcoTree esta preparado para publicar frontend e backend separadamente, mantendo o modo local funcionando.
+
+- Frontend: pode ser publicado em Vercel ou Netlify.
+- Backend: pode ser publicado em Render ou Railway.
+- Banco atual: SQLite local, suficiente para demonstracao, mas com limitacoes em producao.
+- Deploy real: ainda deve ser feito manualmente depois de escolher as URLs finais.
+
+### Variaveis de ambiente do frontend
+
+O frontend usa `src/services/api.js` com:
+
+```txt
+VITE_API_URL ou /api
+```
+
+Configuracao local:
+
+```env
+VITE_API_URL=/api
+```
+
+Tambem e possivel nao criar `.env` no frontend durante o desenvolvimento, porque o fallback `/api` usa o proxy do Vite para `http://127.0.0.1:8000`.
+
+Configuracao online:
+
+```env
+VITE_API_URL=https://sua-api-publica.com
+```
+
+Use a URL publica real do backend, sem barra final. Exemplo: `https://ecotree-api.onrender.com`.
+
+### Variaveis de ambiente do backend
+
+O backend carrega variaveis a partir de `EcoTree-backend/.env` no ambiente local e tambem aceita variaveis configuradas no painel da plataforma de deploy.
+
+```env
+ECOTREE_SECRET_KEY=troque-por-uma-chave-forte-em-producao
+ECOTREE_ENV=development
+ECOTREE_ACCESS_TOKEN_EXPIRE_MINUTES=60
+ECOTREE_DATABASE_FILE=ecotree.db
+ECOTREE_FRONTEND_ORIGINS=http://127.0.0.1:5173,http://localhost:5173
+```
+
+Para deploy online, `ECOTREE_SECRET_KEY` deve ser obrigatoriamente trocada por uma chave forte e privada. Tambem configure `ECOTREE_ENV=production` no backend online para impedir que a API suba com a chave temporaria de desenvolvimento. Nao commite `.env` real.
+
+`ECOTREE_FRONTEND_ORIGINS` deve conter a origem exata do frontend publicado, por exemplo:
+
+```env
+ECOTREE_FRONTEND_ORIGINS=https://ecotree.vercel.app
+```
+
+### CORS
+
+O backend aceita por padrao as origens locais do Vite em `127.0.0.1` e `localhost`, nas portas `5173` e `4173`. Para o ambiente online, adicione a origem publica do frontend em `ECOTREE_FRONTEND_ORIGINS`.
+
+Evite usar `*` em producao. O ideal e liberar apenas o dominio real do frontend.
+
+### SQLite em deploy
+
+O SQLite pode funcionar para demonstracao, especialmente se a plataforma oferecer disco persistente. Em muitos planos gratuitos, porem, arquivos locais podem ser recriados, apagados ou nao persistir entre reinicios e novos deploys.
+
+Para uma versao de producao com dados importantes, o proximo passo recomendado e migrar para Postgres. Esta etapa nao faz essa migracao para evitar alterar a logica principal do sistema.
+
+### HTTPS e PWA
+
+Para que o PWA seja instalavel de forma confiavel em celulares e computadores, o frontend publicado deve estar em HTTPS. Plataformas como Vercel, Netlify, Render e Railway normalmente oferecem HTTPS nas URLs publicas.
+
+Um passo a passo separado esta em `DEPLOY.md`.
 
 ## Endpoints principais
 
@@ -223,15 +341,16 @@ O banco local usado em desenvolvimento e `EcoTree-backend/ecotree.db`. Ele deve 
 - `EcoTree-backend/models.py` esta vazio e pode ser removido em uma etapa futura se nao for adotado.
 - `ActionButton`, `MetricCard` e `ProgressBar` existem como componentes de UI, mas nao estao em uso nas telas atuais.
 - Existem pequenas duplicacoes de helpers de usuario entre rotas e servicos do backend; a consolidacao pode ficar para uma refatoracao futura.
-- A `SECRET_KEY` ainda esta definida diretamente em `auth.py`; para producao, o ideal e externalizar essa configuracao.
+- A `SECRET_KEY` agora e lida por variavel de ambiente em `EcoTree-backend/config.py`, com fallback apenas para desenvolvimento local.
 - As rotas antigas com `user_id` em transacoes e metas permanecem protegidas por JWT e checagem de dono por compatibilidade.
 
 ## Proximos passos futuros
 
-- Externalizar configuracoes sensiveis do backend por variaveis de ambiente.
 - Adicionar testes automatizados para backend e frontend.
 - Criar regras de administracao para `GET /users/`.
 - Avaliar remocao de rotas de compatibilidade apos estabilizar consumidores.
 - Remover componentes nao usados caso nao sejam aproveitados.
 - Preparar deploy do frontend e backend.
+- Escolher a plataforma final de deploy e configurar as URLs reais em `VITE_API_URL` e `ECOTREE_FRONTEND_ORIGINS`.
+- Avaliar migracao de SQLite para Postgres antes de usar dados reais em producao.
 - Persistir no backend conquistas e sequencias hoje exibidas como dados simulados.
