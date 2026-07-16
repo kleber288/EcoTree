@@ -10,12 +10,25 @@ Este guia prepara o deploy online do EcoTree sem publicar automaticamente nada. 
 - Autenticacao: JWT sem mudanca de fluxo.
 - API no frontend: `VITE_API_URL` quando existir, fallback local para `/api`.
 
-## 1. Configurar o backend
+## 1. Configurar o backend no Render
 
 Pasta do servico:
 
 ```txt
 EcoTree-backend
+```
+
+O repositorio tambem possui `render.yaml` na raiz. Ele configura um Web Service Python para a pasta `EcoTree-backend`, sem gravar segredos no codigo.
+
+Se fizer pelo painel manual do Render, use estes valores:
+
+```txt
+Service type: Web Service
+Runtime: Python
+Root Directory: EcoTree-backend
+Build Command: pip install -r requirements.txt
+Start Command: uvicorn main:app --host 0.0.0.0 --port $PORT
+Health Check Path: /
 ```
 
 Comando de instalacao:
@@ -24,7 +37,7 @@ Comando de instalacao:
 pip install -r requirements.txt
 ```
 
-Comando de inicializacao sugerido para Render/Railway:
+Comando de inicializacao para Render/Railway:
 
 ```bash
 uvicorn main:app --host 0.0.0.0 --port $PORT
@@ -41,6 +54,58 @@ ECOTREE_FRONTEND_ORIGINS=https://seu-frontend.vercel.app
 ```
 
 Use uma `ECOTREE_SECRET_KEY` nova no ambiente online. Nao use a chave de exemplo em producao. Com `ECOTREE_ENV=production`, o backend nao deve iniciar se essa chave estiver ausente.
+
+Para gerar uma chave forte no PowerShell:
+
+```powershell
+$bytes = New-Object byte[] 32
+[System.Security.Cryptography.RandomNumberGenerator]::Create().GetBytes($bytes)
+[Convert]::ToBase64String($bytes)
+```
+
+Copie o valor gerado e cole apenas no painel do Render, em `ECOTREE_SECRET_KEY`.
+
+### Opcao com Blueprint
+
+1. Suba o repositorio para GitHub, GitLab ou Bitbucket.
+2. No Render, escolha New > Blueprint.
+3. Selecione o repositorio.
+4. Confirme o arquivo `render.yaml` da raiz.
+5. Preencha `ECOTREE_SECRET_KEY` quando o Render pedir.
+6. Crie o Blueprint e aguarde o deploy.
+
+### Opcao manual pelo painel
+
+1. No Render, escolha New > Web Service.
+2. Conecte o repositorio do EcoTree.
+3. Selecione o branch correto.
+4. Configure Root Directory como `EcoTree-backend`.
+5. Configure Runtime como `Python`.
+6. Configure Build Command como `pip install -r requirements.txt`.
+7. Configure Start Command como `uvicorn main:app --host 0.0.0.0 --port $PORT`.
+8. Em Environment, cadastre as variaveis listadas acima.
+9. Clique em Create Web Service.
+10. Aguarde o deploy finalizar e copie a URL `https://...onrender.com`.
+
+Enquanto o frontend online ainda nao existir, `ECOTREE_FRONTEND_ORIGINS` pode ficar com origens locais para permitir teste com o frontend em desenvolvimento:
+
+```env
+ECOTREE_FRONTEND_ORIGINS=http://127.0.0.1:5173,http://localhost:5173,http://127.0.0.1:4173,http://localhost:4173
+```
+
+Quando o frontend for publicado, troque ou acrescente a URL publica dele:
+
+```env
+ECOTREE_FRONTEND_ORIGINS=https://seu-frontend.vercel.app
+```
+
+Se voce usar disco persistente pago para manter SQLite no Render, monte um disco em `/var/data` e altere:
+
+```env
+ECOTREE_DATABASE_FILE=/var/data/ecotree.db
+```
+
+Sem disco persistente, mantenha `ECOTREE_DATABASE_FILE=ecotree.db` apenas para demonstracao.
 
 ## 2. Configurar o frontend
 
@@ -108,18 +173,22 @@ Depois de publicar o backend:
 2. Acesse `https://sua-api-publica.com/docs`.
 3. Confirme que a resposta da rota raiz mostra a API online.
 4. Confirme que o Swagger carrega.
+5. No Render, abra Logs e confirme que nao ha erro de importacao, porta ou `ECOTREE_SECRET_KEY`.
 
-## 5. Testar login e cadastro
+## 5. Testar cadastro, login e token no backend
 
-Depois de publicar frontend e backend:
+Depois de publicar o backend:
 
-1. Abra a URL publica do frontend.
-2. Cadastre um usuario de teste.
-3. Faca login.
-4. Confira dashboard, arvore, metas, transacoes e perfil.
-5. Confira se o logout remove o token e volta para a tela de autenticacao.
+1. Acesse `https://sua-api-publica.com/docs`.
+2. Execute `POST /users/register` com um usuario de teste.
+3. Execute `POST /users/login` com o mesmo email e senha.
+4. Copie o `access_token` retornado no login.
+5. Clique em Authorize no Swagger.
+6. Informe o token como bearer.
+7. Execute `GET /users/me`.
+8. Confirme que a resposta traz `user_id` e `email`.
 
-Se cadastro ou login falhar por CORS, revise `ECOTREE_FRONTEND_ORIGINS` no backend. Ela deve conter exatamente a origem publica do frontend, por exemplo `https://ecotree.vercel.app`.
+Quando o frontend for publicado e algum fluxo falhar por CORS, revise `ECOTREE_FRONTEND_ORIGINS` no backend. Ela deve conter exatamente a origem publica do frontend, por exemplo `https://ecotree.vercel.app`.
 
 ## 6. Testar o PWA
 
