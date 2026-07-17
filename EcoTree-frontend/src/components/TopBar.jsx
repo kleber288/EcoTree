@@ -1,4 +1,5 @@
 import useProfilePhoto from "../hooks/useProfilePhoto.js";
+import NavIcon from "./NavIcon.jsx";
 import { navigationItems } from "./navigationItems.js";
 import ProfileAvatar from "./profile/ProfileAvatar.jsx";
 
@@ -26,10 +27,13 @@ export default function TopBar({ activePage, onNavigate, onLogout, profile }) {
             key={item.id}
             type="button"
             className={activePage === item.id ? "nav-link active" : "nav-link"}
+            aria-label={item.ariaLabel}
             aria-current={activePage === item.id ? "page" : undefined}
             onClick={() => onNavigate(item.id)}
           >
-            <span className="nav-icon" aria-hidden="true">{item.icon}</span>
+            <span className="nav-icon" aria-hidden="true">
+              <NavIcon name={item.icon} />
+            </span>
             <span>{item.label}</span>
           </button>
         ))}

@@ -224,13 +224,18 @@ button:active:not(:disabled) {
 
 .nav-icon {
   display: grid;
-  width: 24px;
-  height: 24px;
+  width: 18px;
+  height: 18px;
   place-items: center;
-  border-radius: 12px;
-  color: var(--eco-green-800);
-  background: rgba(223, 245, 232, 0.78);
-  font-size: 0.9rem;
+  color: currentColor;
+}
+
+.nav-icon svg,
+.bottom-nav-icon svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  stroke-width: 2;
 }
 
 .nav-link.active,
@@ -275,10 +280,9 @@ button:active:not(:disabled) {
 
 .bottom-nav-icon {
   display: grid;
-  width: 22px;
-  height: 22px;
+  width: 20px;
+  height: 20px;
   place-items: center;
-  font-size: 0.9rem;
   line-height: 1;
 }
 
@@ -4707,9 +4711,9 @@ dd {
 
 .home-actions-activity-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 256px;
-  gap: 24px;
-  align-items: start;
+  grid-template-columns: 1fr;
+  gap: 18px;
+  align-items: stretch;
 }
 
 .home-quick-actions {
@@ -4788,6 +4792,7 @@ dd {
 
 .home-activity-list {
   display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
   margin: 0;
   padding: 0;
@@ -4796,12 +4801,23 @@ dd {
 
 .home-activity-list li {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: start;
-  gap: 10px;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
   border-radius: 12px;
   padding: 12px;
   background: #f5faf7;
+}
+
+.home-activity-marker {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: #b9dfca;
+}
+
+.home-activity-list li:first-child .home-activity-marker {
+  background: #1f8a5b;
 }
 
 .home-activity-list strong,
@@ -5490,10 +5506,6 @@ dd {
     grid-template-columns: 1fr;
   }
 
-  .home-actions-activity-grid {
-    grid-template-columns: 1fr;
-  }
-
   .home-quick-action-list,
   .tree-stage-gallery-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -5525,6 +5537,7 @@ dd {
 
   .home-stat-grid,
   .home-quick-action-list,
+  .home-activity-list,
   .tree-stage-gallery-grid {
     grid-template-columns: 1fr;
   }
@@ -6494,6 +6507,10 @@ dd {
   align-content: start;
 }
 
+.profile-summary-card {
+  grid-column: 1 / -1;
+}
+
 .profile-data-card h2,
 .profile-photo-card h2,
 .profile-summary-card h2,
@@ -6539,11 +6556,6 @@ dd {
   font-size: 0.74rem;
   font-weight: 750;
   line-height: 1.35;
-}
-
-.profile-side-stack {
-  display: grid;
-  gap: 18px;
 }
 
 .profile-photo-picker {
@@ -6603,7 +6615,7 @@ dd {
 
 .profile-summary-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 14px;
   margin: 0;
 }
@@ -6750,6 +6762,14 @@ dd {
   .profile-content-grid,
   .profile-stage-card {
     grid-template-columns: 1fr;
+  }
+
+  .profile-summary-card {
+    grid-column: auto;
+  }
+
+  .profile-summary-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .profile-hero-meta {

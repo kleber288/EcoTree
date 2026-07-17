@@ -358,6 +358,7 @@ export default function Dashboard({ currentUser, onNavigate }) {
                 <ul className="home-activity-list">
                   {lastActivities.map((activity) => (
                     <li key={activity.id}>
+                      <span className="home-activity-marker" aria-hidden="true" />
                       <div>
                         <strong>{activity.title}</strong>
                         <span>{activity.detail}</span>

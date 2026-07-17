@@ -1,3 +1,4 @@
+import NavIcon from "./NavIcon.jsx";
 import { navigationItems } from "./navigationItems.js";
 
 export default function BottomNavigation({ activePage, onNavigate }) {
@@ -12,10 +13,13 @@ export default function BottomNavigation({ activePage, onNavigate }) {
               ? "bottom-nav-item active"
               : "bottom-nav-item"
           }
+          aria-label={item.ariaLabel}
           aria-current={activePage === item.id ? "page" : undefined}
           onClick={() => onNavigate(item.id)}
         >
-          <span className="bottom-nav-icon" aria-hidden="true">{item.icon}</span>
+          <span className="bottom-nav-icon" aria-hidden="true">
+            <NavIcon name={item.icon} />
+          </span>
           <span>{item.shortLabel}</span>
         </button>
       ))}

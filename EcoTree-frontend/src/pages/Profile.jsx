@@ -370,29 +370,27 @@ export default function Profile({ currentUser, onLogout, onNavigate }) {
               </div>
             </article>
 
-            <aside className="profile-side-stack">
-              <article
-                className="profile-photo-card"
-                aria-labelledby="profile-photo-title"
-              >
-                <div className="panel-title-row">
-                  <div>
-                    <h2 id="profile-photo-title">Foto do perfil</h2>
-                    <p>Escolha uma imagem local para personalizar o app.</p>
-                  </div>
+            <article
+              className="profile-photo-card"
+              aria-labelledby="profile-photo-title"
+            >
+              <div className="panel-title-row">
+                <div>
+                  <h2 id="profile-photo-title">Foto do perfil</h2>
+                  <p>Escolha uma imagem local para personalizar o app.</p>
                 </div>
+              </div>
 
-                <ProfilePhotoPicker
-                  disabled={!userKey}
-                  hasPhoto={Boolean(photoUrl)}
-                  loading={photoLoading}
-                  onRemove={removePhoto}
-                  onSelect={savePhoto}
-                />
-              </article>
+              <ProfilePhotoPicker
+                disabled={!userKey}
+                hasPhoto={Boolean(photoUrl)}
+                loading={photoLoading}
+                onRemove={removePhoto}
+                onSelect={savePhoto}
+              />
+            </article>
 
-              <ProfileSummaryCard items={summaryItems} />
-            </aside>
+            <ProfileSummaryCard items={summaryItems} />
           </div>
 
           <section
