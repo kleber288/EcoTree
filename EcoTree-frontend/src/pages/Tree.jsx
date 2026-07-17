@@ -1,39 +1,98 @@
 import { useEffect, useMemo, useState } from "react";
+import TreeStagePanel from "../components/tree/TreeStagePanel.jsx";
+import TreeStageVisual from "../components/tree/TreeStageVisual.jsx";
 import EmptyState from "../components/ui/EmptyState.jsx";
 import FormError from "../components/ui/FormError.jsx";
 import LoadingState from "../components/ui/LoadingState.jsx";
+import StatCard from "../components/ui/StatCard.jsx";
 import { useToast } from "../components/ui/ToastProvider.jsx";
 import { apiRequest } from "../services/api.js";
+import { getTreeStage, TREE_STAGES } from "../utils/treeStage.js";
 
-function getTreeProgress(treeData) {
-  const pontos = Number(treeData?.pontos || 0);
-  const restantes = Number(treeData?.pontos_para_proximo_nivel || 0);
-  const alvo = pontos + restantes;
-
-  if (!treeData?.proximo_nivel || alvo <= 0) {
-    return 100;
+function getNextStageCopy(stage) {
+  if (!stage.proximoEstagio) {
+    return "EcoTree no estágio máximo.";
   }
 
-  return Math.min(Math.round((pontos / alvo) * 100), 100);
+  return `${stage.pontosParaProximo} pontos para ${stage.proximoEstagio}`;
 }
 
-function getNextLevelCopy(treeData) {
-  if (!treeData) {
-    return "Carregando estágio da sua EcoTree.";
-  }
+function TreeStageSelector({ currentStage }) {
+  return (
+    <div className="tree-stage-selector" aria-label="Estágios da árvore">
+      {TREE_STAGES.map((stage) => (
+        <span
+          key={stage.id}
+          className={stage.id === currentStage.id ? "active" : undefined}
+        >
+          {stage.shortName}
+        </span>
+      ))}
+    </div>
+  );
+}
 
-  if (!treeData.proximo_nivel) {
-    return "Você chegou ao nível máximo da sua EcoTree.";
-  }
+function TreeStageGallery({ currentStage }) {
+  return (
+    <section
+      id="tree-stage-gallery"
+      className="tree-stage-gallery"
+      aria-labelledby="tree-stage-gallery-title"
+    >
+      <div className="tree-stage-gallery-heading">
+        <div>
+          <span>ESTADOS VISUAIS</span>
+          <h2 id="tree-stage-gallery-title">Evolução completa da EcoTree</h2>
+          <p>
+            Cada nível altera a cor, a paisagem e a ilustração principal da tela
+            Árvore.
+          </p>
+        </div>
+        <strong>6 níveis · 1 jornada visual</strong>
+      </div>
 
-  return `${treeData.pontos_para_proximo_nivel || 0} XP para ${treeData.proximo_nivel}`;
+      <div className="tree-stage-gallery-grid">
+        {TREE_STAGES.map((stage) => {
+          const galleryStage = getTreeStage(stage.min);
+          const isActive = stage.id === currentStage.id;
+
+          return (
+            <article
+              key={stage.id}
+              className={isActive ? "stage-gallery-card active" : "stage-gallery-card"}
+              style={{
+                "--stage-bg": galleryStage.colors.background,
+                "--stage-border": galleryStage.colors.border,
+                "--stage-accent": galleryStage.colors.accent,
+                "--stage-text": galleryStage.colors.text,
+                "--stage-muted": galleryStage.colors.muted
+              }}
+            >
+              <span>{galleryStage.faixa.toUpperCase()}</span>
+              <h3>{galleryStage.nome}</h3>
+              <p>{galleryStage.tagline}</p>
+              <div className="stage-gallery-visual-shell">
+                <TreeStageVisual stage={galleryStage} variant="gallery" />
+              </div>
+              <div className="stage-progress stage-gallery-progress">
+                <span style={{ width: `${isActive ? currentStage.progresso : galleryStage.progresso}%` }} />
+              </div>
+              <small>
+                {galleryStage.proximoEstagio ? "Próxima transformação" : "Nível máximo"}
+              </small>
+            </article>
+          );
+        })}
+      </div>
+    </section>
+  );
 }
 
 export default function Tree() {
   const toast = useToast();
   const [treeData, setTreeData] = useState(null);
-  const [pontos, setPontos] = useState(5);
-  const [motivo, setMotivo] = useState("hábito sustentável");
+  const [pontos, setPontos] = useState("");
+  const [motivo, setMotivo] = useState("");
   const [loading, setLoading] = useState(true);
   const [savingAction, setSavingAction] = useState("");
   const [error, setError] = useState("");
@@ -89,6 +148,8 @@ export default function Tree() {
       errors.pontos = "Informe quantos pontos deseja adicionar.";
     } else if (!Number.isFinite(numericPoints)) {
       errors.pontos = "Use um valor numérico válido.";
+    } else if (!Number.isInteger(numericPoints)) {
+      errors.pontos = "Use um número inteiro de pontos.";
     } else if (numericPoints <= 0) {
       errors.pontos = "Os pontos precisam ser maiores que zero.";
     }
@@ -126,6 +187,8 @@ export default function Tree() {
       });
 
       setTreeData(data.arvore);
+      setPontos("");
+      setMotivo("");
       toast.success(data.mensagem || "Pontos adicionados com sucesso.");
     } catch (erro) {
       const message = erro.message || "Não foi possível adicionar pontos.";
@@ -160,34 +223,40 @@ export default function Tree() {
     }
   }
 
-  const progress = getTreeProgress(treeData);
+  const currentStage = getTreeStage(treeData?.pontos);
   const timeline = useMemo(
     () => [
       {
         id: "current",
-        title: `${treeData?.pontos || 0} XP acumulados`,
+        title: `${currentStage.points} pontos acumulados`,
         time: "Agora"
       },
       {
         id: "next",
-        title: treeData?.proximo_nivel
-          ? `Próximo estágio: ${treeData.proximo_nivel}`
+        title: currentStage.proximoEstagio
+          ? `Próximo estágio: ${currentStage.proximoEstagio}`
           : "EcoTree no estágio máximo",
-        time: treeData?.proximo_nivel ? "Em breve" : "Concluído"
+        time: currentStage.proximoEstagio ? "Em breve" : "Concluído"
       }
     ],
-    [treeData]
+    [currentStage]
   );
 
   return (
-    <section className="page-section tree-v2-page" aria-labelledby="tree-title">
-      <div className="tree-v2-header">
+    <section
+      className="page-section tree-v2-page tree-redesign"
+      aria-labelledby="tree-title"
+    >
+      <header className="tree-redesign-header">
         <div>
-          <h1 id="tree-title">Minha EcoTree</h1>
-          <p>Sua evolução sustentável</p>
+          <span>MINHA ECOTREE</span>
+          <h1 id="tree-title">Acompanhe cada fase do seu crescimento</h1>
+          <p>A aparência muda a cada nível para tornar sua evolução visível.</p>
         </div>
-        <span>Nível {treeData?.nivel ?? "-"}</span>
-      </div>
+        <a href="#tree-stage-gallery">Ver galeria de níveis</a>
+      </header>
+
+      <TreeStageSelector currentStage={currentStage} />
 
       {error && treeData && (
         <p className="alert error" role="alert">
@@ -207,165 +276,126 @@ export default function Tree() {
         </EmptyState>
       ) : (
         <>
-          <article className="tree-hero-card">
-            <div className="tree-hero-band">
-              <div>
-                <h2>{treeData?.nome_nivel || "EcoTree"}</h2>
-                <p>{getNextLevelCopy(treeData)}</p>
-              </div>
-              <span>🌿 jovem</span>
-            </div>
+          <div className="tree-redesign-main-grid">
+            <TreeStagePanel stage={currentStage} />
 
-            <div className="tree-stage-scene" aria-hidden="true">
-              <span className="scene-sun" />
-              <span className="scene-cloud scene-cloud-one" />
-              <span className="scene-cloud scene-cloud-two" />
-              <span className="stage-tree-trunk" />
-              <span className="stage-tree-trunk-highlight" />
-              <span className="stage-tree-crown stage-tree-main" />
-              <span className="stage-tree-crown stage-tree-left" />
-              <span className="stage-tree-crown stage-tree-right" />
-              <span className="stage-tree-crown stage-tree-top" />
-              <span className="stage-tree-crown stage-tree-deep" />
-              <span className="stage-tree-fruit fruit-one" />
-              <span className="stage-tree-fruit fruit-two" />
-              <span className="stage-tree-fruit fruit-three" />
-              <span className="scene-ground" />
-              <span className="scene-ground-base" />
-            </div>
-
-            <div className="tree-hero-progress">
-              <div>
-                <span>{getNextLevelCopy(treeData)}</span>
-                <strong>{progress}%</strong>
-              </div>
-              <div
-                className="progress-track"
-                role="progressbar"
-                aria-label="Progresso para o próximo nível"
-                aria-valuemin="0"
-                aria-valuemax="100"
-                aria-valuenow={progress}
-              >
-                <span style={{ width: `${progress}%` }} />
-              </div>
-            </div>
-          </article>
-
-          <article className="tree-status-panel">
-            <span className="tree-status-icon" aria-hidden="true">
-              🌱
-            </span>
-            <div>
-              <h2>
-                {treeData?.proximo_nivel
-                  ? `Próximo estágio: ${treeData.proximo_nivel}`
-                  : "EcoTree completa"}
-              </h2>
-              <p>
-                Continue registrando ações para desbloquear folhas, frutos e
-                novas recompensas visuais.
-              </p>
-            </div>
-            <strong>
-              {treeData?.proximo_nivel
-                ? `+${treeData.pontos_para_proximo_nivel || 0} XP`
-                : "100%"}
-            </strong>
-          </article>
-
-          <dl className="tree-metrics-grid">
-            <div>
-              <span aria-hidden="true">⭐</span>
-              <dt>Pontos</dt>
-              <dd>{treeData?.pontos ?? 0}</dd>
-            </div>
-            <div>
-              <span aria-hidden="true">🏆</span>
-              <dt>Nível</dt>
-              <dd>{treeData?.nivel ?? "-"}</dd>
-            </div>
-            <div>
-              <span aria-hidden="true">🔥</span>
-              <dt>Progresso</dt>
-              <dd>{progress}%</dd>
-            </div>
-          </dl>
-
-          <article className="data-card tree-actions-card">
-            <h2>Adicionar pontos</h2>
-            <div className="inline-form">
-              <label htmlFor="tree-pontos">
-                Pontos
-                <input
-                  id="tree-pontos"
-                  type="number"
-                  min="1"
-                  value={pontos}
-                  onChange={(event) => updatePointsValue(event.target.value)}
-                  aria-invalid={Boolean(formErrors.pontos)}
-                  aria-describedby={
-                    formErrors.pontos ? "tree-pontos-error" : undefined
-                  }
-                  required
+            <aside className="tree-level-summary" aria-label="Resumo do nível">
+              <span>RESUMO DO NÍVEL</span>
+              <div className="tree-summary-stat-list">
+                <StatCard
+                  label="PONTOS"
+                  value={currentStage.points}
+                  detail="Total acumulado"
+                  tone="soft"
                 />
-                <FormError id="tree-pontos-error">
-                  {formErrors.pontos}
-                </FormError>
-              </label>
-              <label htmlFor="tree-motivo">
-                Motivo
-                <input
-                  id="tree-motivo"
-                  type="text"
-                  value={motivo}
-                  onChange={(event) => updateReasonValue(event.target.value)}
-                  placeholder="Ex.: economia no mês"
-                  aria-invalid={Boolean(formErrors.motivo)}
-                  aria-describedby={
-                    formErrors.motivo ? "tree-motivo-error" : undefined
-                  }
-                  required
+                <StatCard
+                  label="NÍVEL"
+                  value={currentStage.nivel}
+                  detail="Estágio atual"
+                  tone="soft"
                 />
-                <FormError id="tree-motivo-error">
-                  {formErrors.motivo}
-                </FormError>
-              </label>
-            </div>
-            <div className="tree-action-row">
+                <StatCard
+                  label="PROGRESSO"
+                  value={`${currentStage.progresso}%`}
+                  detail="Para o próximo nível"
+                  tone="soft"
+                />
+              </div>
+
+              <div className="tree-next-reward">
+                <span>Próxima recompensa</span>
+                <strong>
+                  {currentStage.proximoEstagio
+                    ? `Nova aparência: ${currentStage.proximoEstagio}`
+                    : "Nível máximo alcançado"}
+                </strong>
+              </div>
+            </aside>
+          </div>
+
+          <div className="tree-redesign-work-grid">
+            <article className="tree-add-card">
+              <h2>Adicionar pontos</h2>
+              <p>Registre uma ação sustentável para avançar.</p>
+
+              <div className="tree-add-form">
+                <label htmlFor="tree-pontos">
+                  Pontos
+                  <input
+                    id="tree-pontos"
+                    type="number"
+                    min="1"
+                    step="1"
+                    value={pontos}
+                    onChange={(event) => updatePointsValue(event.target.value)}
+                    aria-invalid={Boolean(formErrors.pontos)}
+                    aria-describedby={
+                      formErrors.pontos ? "tree-pontos-error" : undefined
+                    }
+                    required
+                  />
+                  <FormError id="tree-pontos-error">
+                    {formErrors.pontos}
+                  </FormError>
+                </label>
+
+                <label htmlFor="tree-motivo">
+                  Motivo
+                  <input
+                    id="tree-motivo"
+                    type="text"
+                    value={motivo}
+                    onChange={(event) => updateReasonValue(event.target.value)}
+                    placeholder="Hábito sustentável"
+                    aria-invalid={Boolean(formErrors.motivo)}
+                    aria-describedby={
+                      formErrors.motivo ? "tree-motivo-error" : undefined
+                    }
+                    required
+                  />
+                  <FormError id="tree-motivo-error">
+                    {formErrors.motivo}
+                  </FormError>
+                </label>
+
+                <button
+                  className="redesign-primary-button tree-add-submit"
+                  type="button"
+                  onClick={addPoints}
+                  disabled={Boolean(savingAction)}
+                >
+                  {savingAction === "add" ? "Salvando..." : "Adicionar"}
+                </button>
+              </div>
+
               <button
-                className="primary-button"
-                type="button"
-                onClick={addPoints}
-                disabled={Boolean(savingAction)}
-              >
-                {savingAction === "add" ? "Salvando..." : "+ Adicionar pontos"}
-              </button>
-              <button
-                className="secondary-button"
+                className="secondary-button tree-refresh-button"
                 type="button"
                 onClick={updateTree}
                 disabled={Boolean(savingAction)}
               >
-                {savingAction === "update" ? "Atualizando..." : "Atualizar árvore"}
+                {savingAction === "update"
+                  ? "Atualizando..."
+                  : "Atualizar árvore"}
               </button>
-            </div>
-          </article>
+            </article>
 
-          <article className="tree-timeline-section">
-            <div className="home-section-title">
+            <article className="tree-recent-card">
               <h2>Evolução recente</h2>
-            </div>
-            <ul className="tree-timeline-card">
-              {timeline.map((item) => (
-                <li key={item.id}>
-                  <span aria-hidden="true" />
-                  <strong>{item.title}</strong>
-                  <small>{item.time}</small>
-                </li>
-              ))}
-            </ul>
-          </article>
+              <ul>
+                {timeline.map((item) => (
+                  <li key={item.id}>
+                    <span aria-hidden="true" />
+                    <strong>{item.title}</strong>
+                    <small>{item.time}</small>
+                  </li>
+                ))}
+              </ul>
+              <p>{getNextStageCopy(currentStage)}</p>
+            </article>
+          </div>
+
+          <TreeStageGallery currentStage={currentStage} />
         </>
       )}
     </section>

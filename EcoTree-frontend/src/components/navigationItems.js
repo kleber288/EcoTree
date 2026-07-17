@@ -3,30 +3,30 @@ export const navigationItems = [
     id: "dashboard",
     label: "Home",
     shortLabel: "Home",
-    icon: "\u2302"
+    icon: "H"
   },
   {
     id: "tree",
     label: "\u00c1rvore",
     shortLabel: "\u00c1rvore",
-    icon: "\u2667"
+    icon: "A"
   },
   {
     id: "transactions",
     label: "Registros",
     shortLabel: "Registros",
-    icon: "\u25c8"
+    icon: "R"
   },
   {
     id: "goals",
     label: "Metas",
     shortLabel: "Metas",
-    icon: "\u25ce"
+    icon: "M"
   },
   {
     id: "profile",
     label: "Perfil",
     shortLabel: "Perfil",
-    icon: "\u25cf"
+    icon: "P"
   }
 ];

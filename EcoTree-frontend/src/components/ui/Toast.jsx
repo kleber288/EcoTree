@@ -1,5 +1,5 @@
 const toastIcons = {
-  success: "✓",
+  success: "OK",
   error: "!",
   warning: "!",
   info: "i"
@@ -24,7 +24,7 @@ export default function Toast({ toast, onClose }) {
         onClick={() => onClose(toast.id)}
         aria-label="Fechar notificação"
       >
-        ×
+        x
       </button>
     </article>
   );

@@ -1,9 +1,12 @@
 import { useState } from "react";
+import AuthField from "../components/auth/AuthField.jsx";
+import AuthLayout from "../components/auth/AuthLayout.jsx";
 import { loginUser, saveToken } from "../services/api.js";
 
 export default function Login({ onLogin, onShowRegister }) {
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -33,106 +36,91 @@ export default function Login({ onLogin, onShowRegister }) {
   }
 
   return (
-    <main className="auth-screen auth-screen-login">
-      <section className="auth-panel" aria-labelledby="login-title">
-        <div className="auth-hero">
-          <div className="auth-brand-row">
-            <span className="brand-mark auth-brand-mark" aria-hidden="true">E</span>
-            <div>
-              <span className="auth-kicker">EcoTree</span>
-              <strong>Jornada verde</strong>
-            </div>
-          </div>
-
-          <div className="auth-tree auth-tree-grown" aria-hidden="true">
-            <span className="auth-tree-glow" />
-            <span className="auth-tree-crown crown-left" />
-            <span className="auth-tree-crown crown-center" />
-            <span className="auth-tree-crown crown-right" />
-            <span className="auth-tree-trunk" />
-            <span className="auth-tree-ground" />
-          </div>
-
-          <div className="auth-hero-copy">
-            <h1>Seu progresso sustentável começa aqui.</h1>
-            <p>
-              Entre para acompanhar sua árvore, organizar registros e transformar
-              pequenas escolhas em evolução diária.
-            </p>
-          </div>
-
-          <div className="auth-pill">Continue sua jornada verde</div>
+    <AuthLayout variant="login">
+      <form
+        className="redesign-auth-card redesign-login-card"
+        onSubmit={handleSubmit}
+        aria-describedby={error ? "login-form-error" : undefined}
+      >
+        <div className="redesign-auth-heading">
+          <span>ACESSO</span>
+          <h2 id="login-title">Bem-vindo de volta</h2>
+          <p>Entre para continuar cultivando sua jornada.</p>
         </div>
 
-        <form
-          className="auth-card"
-          onSubmit={handleSubmit}
+        <AuthField
+          id="login-email"
+          label="Email"
+          type="email"
+          value={email}
+          onChange={(event) => setEmail(event.target.value)}
+          placeholder="voce@email.com"
+          autoComplete="email"
           aria-describedby={error ? "login-form-error" : undefined}
-        >
-          <div className="auth-card-heading">
-            <span className="eyebrow">Login</span>
-            <h2 id="login-title">Bem-vindo de volta</h2>
-            <p>Use seu email e senha para continuar evoluindo sua EcoTree.</p>
-          </div>
+          aria-invalid={Boolean(error)}
+          required
+        />
 
-          <label htmlFor="login-email">
-            Email
-            <input
-              id="login-email"
-              type="email"
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
-              placeholder="voce@email.com"
-              autoComplete="email"
-              aria-describedby={error ? "login-form-error" : undefined}
-              aria-invalid={Boolean(error)}
-              required
-            />
-          </label>
-
-          <label htmlFor="login-senha">
-            Senha
-            <input
-              id="login-senha"
-              type="password"
-              value={senha}
-              onChange={(event) => setSenha(event.target.value)}
-              placeholder="mínimo de 6 caracteres"
-              autoComplete="current-password"
-              minLength="6"
-              aria-describedby={error ? "login-form-error" : undefined}
-              aria-invalid={Boolean(error)}
-              required
-            />
-          </label>
-
-          {error && (
-            <p className="alert error auth-alert" id="login-form-error" role="alert">
-              {error}
-            </p>
-          )}
-
-          <button
-            className="primary-button auth-submit"
-            type="submit"
-            disabled={loading}
-            aria-busy={loading}
-          >
-            {loading ? "Entrando..." : "Entrar no EcoTree"}
-          </button>
-
-          <p className="auth-switch">
-            Ainda não tem conta?
+        <AuthField
+          id="login-senha"
+          label="Senha"
+          type={showPassword ? "text" : "password"}
+          value={senha}
+          onChange={(event) => setSenha(event.target.value)}
+          placeholder="••••••••"
+          autoComplete="current-password"
+          minLength="6"
+          aria-describedby={error ? "login-form-error" : undefined}
+          aria-invalid={Boolean(error)}
+          required
+          action={
             <button
-              className="text-button"
+              className="password-toggle"
               type="button"
-              onClick={onShowRegister}
+              onClick={() => setShowPassword((current) => !current)}
+              aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
+              aria-pressed={showPassword}
             >
-              Criar conta
+              <span className="password-eye" aria-hidden="true" />
             </button>
+          }
+        />
+
+        <div className="redesign-auth-row">
+          <span>Esqueci minha senha</span>
+        </div>
+
+        {error && (
+          <p className="alert error auth-alert" id="login-form-error" role="alert">
+            {error}
           </p>
-        </form>
-      </section>
-    </main>
+        )}
+
+        <button
+          className="redesign-primary-button"
+          type="submit"
+          disabled={loading}
+          aria-busy={loading}
+        >
+          {loading ? "Entrando..." : "Entrar no EcoTree"}
+        </button>
+
+        <p className="redesign-auth-switch">
+          Ainda não tem conta?
+          <button
+            className="redesign-text-button"
+            type="button"
+            onClick={onShowRegister}
+          >
+            Criar conta
+          </button>
+        </p>
+
+        <div className="redesign-auth-divider" />
+        <p className="redesign-auth-terms">
+          Ao entrar, você concorda com os Termos e a Política de Privacidade.
+        </p>
+      </form>
+    </AuthLayout>
   );
 }

@@ -4,7 +4,8 @@ export default function AppLayout({
   activePage,
   children,
   onLogout,
-  onNavigate
+  onNavigate,
+  profile
 }) {
   return (
     <div className="app-shell">
@@ -12,6 +13,7 @@ export default function AppLayout({
         activePage={activePage}
         onNavigate={onNavigate}
         onLogout={onLogout}
+        profile={profile}
       />
       <main className="main-content">
         {children}
