@@ -5,7 +5,7 @@ from schemas import TreeAddPoints
 from tree_service import (
     buscar_ou_criar_arvore,
     montar_resposta_arvore,
-    atualizar_arvore_no_banco,
+    adicionar_pontos_manuais_arvore,
     recalcular_arvore_usuario
 )
 
@@ -58,13 +58,8 @@ def adicionar_pontos_arvore_logada(
     usuario_logado: dict = Depends(verificar_token)
 ):
     user_id = usuario_logado["user_id"]
-    arvore = buscar_ou_criar_arvore(user_id)
 
-    novos_pontos = arvore["pontos"] + dados.pontos
-
-    atualizar_arvore_no_banco(user_id, novos_pontos)
-
-    arvore_atualizada = buscar_ou_criar_arvore(user_id)
+    arvore_atualizada = adicionar_pontos_manuais_arvore(user_id, dados.pontos)
 
     return {
         "mensagem": "Pontos adicionados com sucesso!",

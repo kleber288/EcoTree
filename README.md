@@ -12,7 +12,8 @@ O objetivo do EcoTree e ajudar o usuario a registrar pequenas acoes e evolucoes 
 
 - Python
 - FastAPI
-- SQLite
+- SQLite em desenvolvimento local
+- PostgreSQL em producao via `DATABASE_URL`
 - Uvicorn
 - JWT com `python-jose`
 - `pwdlib[argon2]` para hash e verificacao de senha
@@ -192,7 +193,8 @@ O EcoTree esta preparado para publicar frontend e backend separadamente, mantend
 
 - Frontend: pode ser publicado em Vercel ou Netlify.
 - Backend: pode ser publicado em Render ou Railway.
-- Banco atual: SQLite local, suficiente para demonstracao, mas com limitacoes em producao.
+- Banco local: SQLite em arquivo, usado somente sem `DATABASE_URL` fora de producao.
+- Banco de producao: PostgreSQL, recomendado no Supabase, acessado apenas pelo backend.
 - Deploy real: ainda deve ser feito manualmente depois de escolher as URLs finais.
 
 ### Variaveis de ambiente do frontend
@@ -226,12 +228,13 @@ O backend carrega variaveis a partir de `EcoTree-backend/.env` no ambiente local
 ```env
 ECOTREE_SECRET_KEY=troque-por-uma-chave-forte-em-producao
 ECOTREE_ENV=development
+DATABASE_URL=
 ECOTREE_ACCESS_TOKEN_EXPIRE_MINUTES=60
 ECOTREE_DATABASE_FILE=ecotree.db
 ECOTREE_FRONTEND_ORIGINS=http://127.0.0.1:5173,http://localhost:5173
 ```
 
-Para deploy online, `ECOTREE_SECRET_KEY` deve ser obrigatoriamente trocada por uma chave forte e privada. Tambem configure `ECOTREE_ENV=production` no backend online para impedir que a API suba com a chave temporaria de desenvolvimento. Nao commite `.env` real.
+Para deploy online, `ECOTREE_SECRET_KEY` deve ser obrigatoriamente trocada por uma chave forte e privada. Tambem configure `ECOTREE_ENV=production` e `DATABASE_URL` no backend online. Em producao, a API nao inicia sem `DATABASE_URL`, evitando SQLite no sistema de arquivos temporario do Render. Nao commite `.env` real.
 
 `ECOTREE_FRONTEND_ORIGINS` deve conter a origem exata do frontend publicado, por exemplo:
 
@@ -245,11 +248,13 @@ O backend aceita por padrao as origens locais do Vite em `127.0.0.1` e `localhos
 
 Evite usar `*` em producao. O ideal e liberar apenas o dominio real do frontend.
 
-### SQLite em deploy
+### Banco em deploy
 
-O SQLite pode funcionar para demonstracao, especialmente se a plataforma oferecer disco persistente. Em muitos planos gratuitos, porem, arquivos locais podem ser recriados, apagados ou nao persistir entre reinicios e novos deploys.
+O SQLite continua disponivel para desenvolvimento local. Em producao, use PostgreSQL por `DATABASE_URL`; o Supabase pode ser usado apenas como banco PostgreSQL, mantendo JWT e hash de senha no FastAPI.
 
-Para uma versao de producao com dados importantes, o proximo passo recomendado e migrar para Postgres. Esta etapa nao faz essa migracao para evitar alterar a logica principal do sistema.
+Nao use Supabase Auth, nao conecte o frontend diretamente ao Supabase e nao exponha anon key, service_role ou connection string no frontend.
+
+No Supabase, as tabelas do EcoTree no schema `public` recebem uma protecao idempotente na inicializacao do backend: RLS habilitada, nenhuma policy publica criada e grants de `anon` e `authenticated` revogados nas tabelas e sequences da aplicacao. O backend continua acessando o banco pelo usuario PostgreSQL da `DATABASE_URL`.
 
 ### HTTPS e PWA
 
@@ -352,5 +357,5 @@ O banco local usado em desenvolvimento e `EcoTree-backend/ecotree.db`. Ele deve 
 - Remover componentes nao usados caso nao sejam aproveitados.
 - Preparar deploy do frontend e backend.
 - Escolher a plataforma final de deploy e configurar as URLs reais em `VITE_API_URL` e `ECOTREE_FRONTEND_ORIGINS`.
-- Avaliar migracao de SQLite para Postgres antes de usar dados reais em producao.
+- Configurar `DATABASE_URL` no Render apontando para o PostgreSQL do Supabase antes de usar dados reais em producao.
 - Persistir no backend conquistas e sequencias hoje exibidas como dados simulados.

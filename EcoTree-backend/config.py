@@ -48,6 +48,7 @@ def _resolve_database_file(value):
 
 ENVIRONMENT = os.getenv("ECOTREE_ENV", "development").strip().lower()
 SECRET_KEY = os.getenv("ECOTREE_SECRET_KEY")
+DATABASE_URL = os.getenv("DATABASE_URL", "").strip()
 
 if not SECRET_KEY:
     if ENVIRONMENT in ("production", "prod"):

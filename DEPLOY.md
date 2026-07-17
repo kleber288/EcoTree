@@ -6,7 +6,8 @@ Este guia prepara o deploy online do EcoTree sem publicar automaticamente nada. 
 
 - Frontend: React/Vite/PWA, recomendado para Vercel ou Netlify.
 - Backend: FastAPI, recomendado para Render ou Railway.
-- Banco atual: SQLite em arquivo local.
+- Banco local: SQLite em arquivo, somente para desenvolvimento.
+- Banco de producao: PostgreSQL via `DATABASE_URL`, recomendado no Supabase.
 - Autenticacao: JWT sem mudanca de fluxo.
 - API no frontend: `VITE_API_URL` quando existir, fallback local para `/api`.
 
@@ -46,14 +47,14 @@ uvicorn main:app --host 0.0.0.0 --port $PORT
 Variaveis do backend:
 
 ```env
+DATABASE_URL=connection-string-do-postgresql
 ECOTREE_SECRET_KEY=uma-chave-forte-e-privada
 ECOTREE_ENV=production
 ECOTREE_ACCESS_TOKEN_EXPIRE_MINUTES=60
-ECOTREE_DATABASE_FILE=ecotree.db
 ECOTREE_FRONTEND_ORIGINS=https://seu-frontend.vercel.app
 ```
 
-Use uma `ECOTREE_SECRET_KEY` nova no ambiente online. Nao use a chave de exemplo em producao. Com `ECOTREE_ENV=production`, o backend nao deve iniciar se essa chave estiver ausente.
+Use uma `ECOTREE_SECRET_KEY` nova no ambiente online. Nao use a chave de exemplo em producao. Com `ECOTREE_ENV=production`, o backend nao deve iniciar se essa chave estiver ausente. Tambem nao deve iniciar sem `DATABASE_URL`, porque o SQLite local nao e seguro no sistema de arquivos temporario do Render.
 
 Para gerar uma chave forte no PowerShell:
 
@@ -83,7 +84,7 @@ Copie o valor gerado e cole apenas no painel do Render, em `ECOTREE_SECRET_KEY`.
 5. Configure Runtime como `Python`.
 6. Configure Build Command como `pip install -r requirements.txt`.
 7. Configure Start Command como `uvicorn main:app --host 0.0.0.0 --port $PORT`.
-8. Em Environment, cadastre as variaveis listadas acima.
+8. Em Environment, cadastre as variaveis listadas acima, incluindo `DATABASE_URL`.
 9. Clique em Create Web Service.
 10. Aguarde o deploy finalizar e copie a URL `https://...onrender.com`.
 
@@ -99,13 +100,7 @@ Quando o frontend for publicado, troque ou acrescente a URL publica dele:
 ECOTREE_FRONTEND_ORIGINS=https://seu-frontend.vercel.app
 ```
 
-Se voce usar disco persistente pago para manter SQLite no Render, monte um disco em `/var/data` e altere:
-
-```env
-ECOTREE_DATABASE_FILE=/var/data/ecotree.db
-```
-
-Sem disco persistente, mantenha `ECOTREE_DATABASE_FILE=ecotree.db` apenas para demonstracao.
+Nao configure SQLite para producao. O arquivo `ECOTREE_DATABASE_FILE` continua existindo apenas para desenvolvimento local quando `DATABASE_URL` estiver vazia.
 
 ## 2. Configurar o frontend
 
@@ -195,7 +190,8 @@ Problemas comuns:
 - CORS: a URL da Vercel nao esta em `ECOTREE_FRONTEND_ORIGINS`.
 - API incorreta: `VITE_API_URL` esta com placeholder, barra final problematica ou URL diferente da API Render.
 - Backend dormindo: no plano gratuito do Render, a primeira chamada pode demorar.
-- SQLite sem persistencia: dados podem sumir se o servico reiniciar sem disco persistente.
+- PostgreSQL ausente: se `ECOTREE_ENV=production` estiver definido sem `DATABASE_URL`, o backend falha na inicializacao.
+- Supabase inacessivel: revise se a connection string esta correta e se voce usou direct connection ou Session pooler conforme a rede do Render.
 - Cache antigo: o service worker pode manter arquivos antigos; limpe dados do site ou force novo deploy.
 - Mixed content: o frontend em HTTPS deve chamar backend em HTTPS, nunca `http://`.
 
@@ -258,8 +254,107 @@ Quando o frontend for publicado e algum fluxo falhar por CORS, revise `ECOTREE_F
 
 O service worker deve cuidar apenas dos arquivos estaticos do frontend. Os dados reais continuam vindo da API.
 
-## 7. Limite do SQLite
+## 7. Configurar PostgreSQL no Supabase
 
-O SQLite atual pode funcionar para demonstracao. Em deploy gratuito, o arquivo do banco pode ser perdido se a plataforma nao oferecer armazenamento persistente.
+Use o Supabase somente como PostgreSQL. Nao use Supabase Auth, nao conecte o frontend direto ao Supabase e nao coloque anon key, service_role ou connection string no frontend.
 
-Antes de usar dados reais em producao, considere migrar para Postgres. Essa migracao nao faz parte desta etapa.
+Passos manuais:
+
+1. Entre no Supabase.
+2. Crie um projeto.
+3. Defina e guarde a senha do banco fora do repositorio.
+4. Abra o botao Connect.
+5. Escolha conexao direta se o ambiente suportar IPv6.
+6. Escolha Session pooler para backend persistente em rede IPv4, normalmente usando porta 5432, se a conexao direta IPv6 nao funcionar no Render.
+7. Copie a connection string.
+8. Substitua apenas o placeholder de senha localmente, sem colar a senha em conversas ou commits.
+9. No Render, abra o Web Service do backend.
+10. Entre em Environment.
+11. Crie a variavel `DATABASE_URL` com a connection string do Supabase.
+12. Confirme `ECOTREE_ENV=production`.
+13. Confirme que `ECOTREE_SECRET_KEY` esta definida.
+14. Salve e faca deploy somente quando decidir publicar.
+15. Confira os logs sem expor credenciais.
+16. Teste `/health`.
+17. Crie uma conta.
+18. Entre na mesma conta em aba anonima ou outro dispositivo.
+
+## 8. Criar o esquema no PostgreSQL
+
+Na inicializacao, o backend executa uma criacao idempotente do esquema com SQLAlchemy. Ela cria tabelas ausentes, aplica a migracao versionada `20260716_split_tree_points` e reaplica a protecao `20260717_secure_supabase_public_tables` sem apagar tabelas existentes.
+
+Nao execute `DROP TABLE` em producao. Se a criacao do esquema falhar, revise a variavel `DATABASE_URL`, a senha do banco e a conectividade com o Supabase.
+
+### Seguranca das tabelas no Supabase
+
+O Supabase expoe o schema `public` pela Data API. Como o EcoTree usa o Supabase apenas como PostgreSQL do backend, as tabelas da aplicacao ficam protegidas assim:
+
+- RLS habilitada em `users`, `transactions`, `goals`, `tree_status` e `schema_migrations`;
+- nenhuma policy publica criada;
+- permissoes `SELECT`, `INSERT`, `UPDATE`, `DELETE`, `TRUNCATE`, `REFERENCES` e `TRIGGER` revogadas de `anon` e `authenticated`;
+- permissoes `USAGE`, `SELECT` e `UPDATE` revogadas dessas roles nas sequences de `id`;
+- `FORCE ROW LEVEL SECURITY` nao e usado, para o backend conectado como proprietario continuar funcionando.
+
+Depois de configurar o Supabase, confira no painel:
+
+1. Abra Table Editor.
+2. Entre em cada tabela da aplicacao.
+3. Confirme que RLS aparece habilitada.
+4. Abra Authentication > Policies ou a aba Policies da tabela.
+5. Confirme que nao ha policies publicas nessas tabelas.
+
+Tambem rode a verificacao automatica, sem commitar a connection string:
+
+```bash
+cd D:\Projeto_EcoTree\EcoTree-backend
+python scripts/verify_supabase_security.py
+```
+
+Esse script usa `DATABASE_URL`, confirma RLS e revogacoes para `anon` e `authenticated`, e testa `SELECT`, `INSERT`, `UPDATE` e `DELETE` do backend dentro de uma transacao com rollback.
+
+## 9. Migracao opcional do SQLite
+
+Se os dados locais forem apenas testes, a alternativa mais simples e configurar o PostgreSQL e criar novas contas.
+
+Para copiar dados do SQLite local para PostgreSQL, use o script opcional:
+
+```bash
+cd D:\Projeto_EcoTree\EcoTree-backend
+python scripts/migrate_sqlite_to_postgres.py --sqlite-file ecotree.db --dry-run
+python scripts/migrate_sqlite_to_postgres.py --sqlite-file ecotree.db --confirm-import
+```
+
+O script:
+
+- le o SQLite somente como origem;
+- nao altera nem apaga o SQLite;
+- importa usuarios, depois arvore, transacoes e metas;
+- preserva IDs quando possivel;
+- preserva hashes de senha e datas;
+- trata registros existentes e emails duplicados;
+- executa a importacao em transacao;
+- sincroniza sequences do PostgreSQL;
+- mostra apenas contagens, sem senhas ou hashes.
+
+Execute a importacao real somente depois de configurar `DATABASE_URL` no ambiente e conferir o `--dry-run`.
+
+## 10. Teste entre dispositivos
+
+1. Abra o site publicado no PC 1.
+2. Crie uma conta com um email de teste.
+3. Crie uma transacao.
+4. Crie uma meta.
+5. Confira a arvore.
+6. Saia da conta.
+7. Abra o site no PC 2, celular ou janela anonima.
+8. Entre com o mesmo email e senha.
+9. Confirme que arvore, transacoes e metas sao as mesmas.
+10. Confirme que dados de outra conta nao aparecem.
+
+O `localStorage` guarda somente o token daquele navegador. A conta, a arvore, as transacoes e as metas ficam no PostgreSQL por meio do backend.
+
+## 11. Foto de perfil
+
+A foto de perfil ainda fica salva apenas no navegador. Esta tarefa nao implementa upload de foto.
+
+Para sincronizar foto futuramente, sera necessario armazenar o arquivo em um servico online e salvar uma URL no banco.

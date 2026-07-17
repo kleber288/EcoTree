@@ -1,7 +1,15 @@
-import sqlite3
 from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy import insert, select
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
-from database import conectar
+from database import (
+    executar_select_todos,
+    executar_select_um,
+    timestamp_para_api,
+    transacao,
+    tree_status_table,
+    users_table,
+)
 from schemas import UserCreate, UserLogin
 from auth import criar_token, gerar_hash_senha, verificar_senha, verificar_token
 
@@ -11,19 +19,21 @@ router = APIRouter(
 )
 
 
+def _normalizar_email(email: str) -> str:
+    return email.strip().lower()
+
+
 @router.get("/")
 def listar_usuarios(usuario_logado: dict = Depends(verificar_token)):
     # Futuramente, restringir esta listagem para usuarios administradores.
-    conn = conectar()
-    cursor = conn.cursor()
-
-    cursor.execute("""
-        SELECT id, nome, email, created_at 
-        FROM users
-    """)
-
-    usuarios = cursor.fetchall()
-    conn.close()
+    usuarios = executar_select_todos(
+        select(
+            users_table.c.id,
+            users_table.c.nome,
+            users_table.c.email,
+            users_table.c.created_at,
+        )
+    )
 
     lista_usuarios = []
 
@@ -32,7 +42,7 @@ def listar_usuarios(usuario_logado: dict = Depends(verificar_token)):
             "id": usuario["id"],
             "nome": usuario["nome"],
             "email": usuario["email"],
-            "created_at": usuario["created_at"]
+            "created_at": timestamp_para_api(usuario["created_at"])
         })
 
     return {
@@ -43,19 +53,13 @@ def listar_usuarios(usuario_logado: dict = Depends(verificar_token)):
 
 @router.post("/register", status_code=status.HTTP_201_CREATED)
 def cadastrar_usuario(usuario: UserCreate):
-    conn = conectar()
-    cursor = conn.cursor()
+    email = _normalizar_email(usuario.email)
 
-    cursor.execute("""
-        SELECT id 
-        FROM users 
-        WHERE email = ?
-    """, (usuario.email,))
-
-    email_existente = cursor.fetchone()
+    email_existente = executar_select_um(
+        select(users_table.c.id).where(users_table.c.email == email)
+    )
 
     if email_existente:
-        conn.close()
         raise HTTPException(
             status_code=400,
             detail="Este email já está cadastrado."
@@ -64,36 +68,36 @@ def cadastrar_usuario(usuario: UserCreate):
     senha_hash = gerar_hash_senha(usuario.senha)
 
     try:
-        cursor.execute("""
-            INSERT INTO users (nome, email, senha)
-            VALUES (?, ?, ?)
-        """, (usuario.nome, usuario.email, senha_hash))
+        with transacao() as conn:
+            result = conn.execute(
+                insert(users_table).values(
+                    nome=usuario.nome,
+                    email=email,
+                    senha=senha_hash,
+                )
+            )
 
-        user_id = cursor.lastrowid
+            user_id = result.inserted_primary_key[0]
+            conn.execute(insert(tree_status_table).values(user_id=user_id))
 
-        cursor.execute("""
-            INSERT INTO tree_status (user_id, pontos, nivel, nome_nivel)
-            VALUES (?, ?, ?, ?)
-        """, (user_id, 0, 1, "Semente"))
-
-        conn.commit()
-
-    except sqlite3.Error as erro:
-        conn.rollback()
+    except IntegrityError:
         raise HTTPException(
-            status_code=500,
-            detail=f"Erro ao cadastrar usuário: {erro}"
+            status_code=400,
+            detail="Este email já está cadastrado."
         )
 
-    finally:
-        conn.close()
+    except SQLAlchemyError:
+        raise HTTPException(
+            status_code=500,
+            detail="Erro ao cadastrar usuário."
+        )
 
     return {
         "mensagem": "Usuário cadastrado com sucesso!",
         "usuario": {
             "id": user_id,
             "nome": usuario.nome,
-            "email": usuario.email
+            "email": email
         },
         "arvore": {
             "nivel": 1,
@@ -105,17 +109,17 @@ def cadastrar_usuario(usuario: UserCreate):
 
 @router.post("/login")
 def login_usuario(dados_login: UserLogin):
-    conn = conectar()
-    cursor = conn.cursor()
+    email = _normalizar_email(dados_login.email)
 
-    cursor.execute("""
-        SELECT id, nome, email, senha, created_at
-        FROM users
-        WHERE email = ?
-    """, (dados_login.email,))
-
-    usuario = cursor.fetchone()
-    conn.close()
+    usuario = executar_select_um(
+        select(
+            users_table.c.id,
+            users_table.c.nome,
+            users_table.c.email,
+            users_table.c.senha,
+            users_table.c.created_at,
+        ).where(users_table.c.email == email)
+    )
 
     if usuario is None:
         raise HTTPException(
@@ -145,7 +149,7 @@ def login_usuario(dados_login: UserLogin):
             "id": usuario["id"],
             "nome": usuario["nome"],
             "email": usuario["email"],
-            "created_at": usuario["created_at"]
+            "created_at": timestamp_para_api(usuario["created_at"])
         },
         "access_token": access_token,
         "token_type": "bearer"

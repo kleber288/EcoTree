@@ -9,6 +9,8 @@ services:
     healthCheckPath: /
     autoDeployTrigger: commit
     envVars:
+      - key: DATABASE_URL
+        sync: false
       - key: ECOTREE_SECRET_KEY
         sync: false
       - key: ECOTREE_ENV
