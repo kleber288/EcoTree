@@ -1,4 +1,5 @@
 import useProfilePhoto from "../hooks/useProfilePhoto.js";
+import BrandLockup from "./BrandLockup.jsx";
 import NavIcon from "./NavIcon.jsx";
 import { navigationItems } from "./navigationItems.js";
 import ProfileAvatar from "./profile/ProfileAvatar.jsx";
@@ -14,11 +15,7 @@ export default function TopBar({ activePage, onNavigate, onLogout, profile }) {
         onClick={() => onNavigate("dashboard")}
         aria-label="Ir para Home"
       >
-        <span className="brand-mark" aria-hidden="true">E</span>
-        <span className="brand-copy">
-          <span className="brand-text">EcoTree</span>
-          <span className="brand-subtitle">Jornada verde</span>
-        </span>
+        <BrandLockup variant="navbar" className="topbar-brand-logo" />
       </button>
 
       <nav className="desktop-nav" aria-label="Navega\u00e7\u00e3o principal">

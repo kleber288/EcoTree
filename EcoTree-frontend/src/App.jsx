@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import AppLayout from "./components/AppLayout.jsx";
+import BrandLockup from "./components/BrandLockup.jsx";
 import LoadingState from "./components/ui/LoadingState.jsx";
 import Dashboard from "./pages/Dashboard.jsx";
 import Goals from "./pages/Goals.jsx";
@@ -111,6 +112,7 @@ export default function App() {
   if (userLoading) {
     return (
       <main className="session-loading-screen">
+        <BrandLockup className="session-loading-brand" />
         <LoadingState>Validando sua sessão...</LoadingState>
       </main>
     );
