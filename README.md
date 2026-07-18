@@ -231,20 +231,20 @@ ECOTREE_ENV=development
 DATABASE_URL=
 ECOTREE_ACCESS_TOKEN_EXPIRE_MINUTES=60
 ECOTREE_DATABASE_FILE=ecotree.db
-ECOTREE_FRONTEND_ORIGINS=http://127.0.0.1:5173,http://localhost:5173
+ECOTREE_CORS_ORIGINS=http://127.0.0.1:5173,http://localhost:5173
 ```
 
 Para deploy online, `ECOTREE_SECRET_KEY` deve ser obrigatoriamente trocada por uma chave forte e privada. Tambem configure `ECOTREE_ENV=production` e `DATABASE_URL` no backend online. Em producao, a API nao inicia sem `DATABASE_URL`, evitando SQLite no sistema de arquivos temporario do Render. Nao commite `.env` real.
 
-`ECOTREE_FRONTEND_ORIGINS` deve conter a origem exata do frontend publicado, por exemplo:
+`ECOTREE_CORS_ORIGINS` aceita uma ou mais origens exatas separadas por virgula. Em producao, configure:
 
 ```env
-ECOTREE_FRONTEND_ORIGINS=https://ecotree.vercel.app
+ECOTREE_CORS_ORIGINS=https://eco-tree-ten.vercel.app
 ```
 
 ### CORS
 
-O backend aceita por padrao as origens locais do Vite em `127.0.0.1` e `localhost`, nas portas `5173` e `4173`. Para o ambiente online, adicione a origem publica do frontend em `ECOTREE_FRONTEND_ORIGINS`.
+Em desenvolvimento, o backend aceita por padrao o Vite em `http://127.0.0.1:5173` e `http://localhost:5173`. Em producao, as origens locais nao sao adicionadas; o Render usa `ECOTREE_CORS_ORIGINS=https://eco-tree-ten.vercel.app`.
 
 Evite usar `*` em producao. O ideal e liberar apenas o dominio real do frontend.
 
@@ -356,6 +356,6 @@ O banco local usado em desenvolvimento e `EcoTree-backend/ecotree.db`. Ele deve 
 - Avaliar remocao de rotas de compatibilidade apos estabilizar consumidores.
 - Remover componentes nao usados caso nao sejam aproveitados.
 - Preparar deploy do frontend e backend.
-- Escolher a plataforma final de deploy e configurar as URLs reais em `VITE_API_URL` e `ECOTREE_FRONTEND_ORIGINS`.
+- Configurar as URLs reais em `VITE_API_URL` e `ECOTREE_CORS_ORIGINS`.
 - Configurar `DATABASE_URL` no Render apontando para o PostgreSQL do Supabase antes de usar dados reais em producao.
 - Persistir no backend conquistas e sequencias hoje exibidas como dados simulados.

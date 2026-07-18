@@ -1,3 +1,4 @@
+import asyncio
 from decimal import Decimal
 import sqlite3
 import sys
@@ -18,6 +19,8 @@ if str(BACKEND_DIR) not in sys.path:
 
 import database  # noqa: E402
 from auth import verificar_token  # noqa: E402
+from config import _resolve_allowed_origins  # noqa: E402
+from main import app  # noqa: E402
 from routes import goals, transactions, tree, users  # noqa: E402
 from schemas import (  # noqa: E402
     GoalCreateAuthenticated,
@@ -49,6 +52,49 @@ def restore_database_config():
         database_file=ORIGINAL_DATABASE_FILE,
         environment=ORIGINAL_ENVIRONMENT,
     )
+
+
+async def make_asgi_request(method, path, headers):
+    messages = []
+    request_sent = False
+
+    async def receive():
+        nonlocal request_sent
+        if request_sent:
+            return {"type": "http.disconnect"}
+        request_sent = True
+        return {"type": "http.request", "body": b"", "more_body": False}
+
+    async def send(message):
+        messages.append(message)
+
+    scope = {
+        "type": "http",
+        "asgi": {"version": "3.0"},
+        "http_version": "1.1",
+        "method": method,
+        "scheme": "https",
+        "path": path,
+        "raw_path": path.encode("ascii"),
+        "query_string": b"",
+        "headers": [
+            (name.lower().encode("ascii"), value.encode("ascii"))
+            for name, value in headers.items()
+        ],
+        "client": ("127.0.0.1", 12345),
+        "server": ("testserver", 443),
+    }
+
+    await app(scope, receive, send)
+    response_start = next(
+        message for message in messages
+        if message["type"] == "http.response.start"
+    )
+    response_headers = {
+        name.decode("latin-1").lower(): value.decode("latin-1")
+        for name, value in response_start["headers"]
+    }
+    return response_start["status"], response_headers
 
 
 def create_old_schema(db_path):
@@ -680,6 +726,53 @@ class DatabaseSelectionTests(unittest.TestCase):
 
         with self.assertRaises(RuntimeError):
             database.criar_tabelas()
+
+
+class CorsTests(unittest.TestCase):
+    def test_register_preflight_allows_vercel_post(self):
+        status_code, headers = asyncio.run(make_asgi_request(
+            "OPTIONS",
+            "/users/register",
+            {
+                "Origin": "https://eco-tree-ten.vercel.app",
+                "Access-Control-Request-Method": "POST",
+                "Access-Control-Request-Headers": "content-type",
+            },
+        ))
+
+        self.assertEqual(status_code, 200)
+        self.assertEqual(
+            headers.get("access-control-allow-origin"),
+            "https://eco-tree-ten.vercel.app",
+        )
+        self.assertIn(
+            "POST",
+            headers.get("access-control-allow-methods", "").split(", "),
+        )
+        self.assertEqual(
+            headers.get("access-control-allow-credentials"),
+            "true",
+        )
+        self.assertIn(
+            "content-type",
+            headers.get("access-control-allow-headers", "").lower(),
+        )
+
+    def test_local_origins_are_defaults_only_in_development(self):
+        development_origins = _resolve_allowed_origins("development", None)
+        production_origins = _resolve_allowed_origins("production", None)
+
+        self.assertIn("http://localhost:5173", development_origins)
+        self.assertIn("http://127.0.0.1:5173", development_origins)
+        self.assertNotIn("http://localhost:5173", production_origins)
+        self.assertNotIn("http://127.0.0.1:5173", production_origins)
+        self.assertEqual(production_origins, [
+            "https://eco-tree-ten.vercel.app"
+        ])
+
+    def test_wildcard_origin_is_rejected_in_production(self):
+        with self.assertRaises(RuntimeError):
+            _resolve_allowed_origins("production", "*")
 
 
 if __name__ == "__main__":

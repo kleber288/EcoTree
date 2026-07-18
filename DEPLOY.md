@@ -51,7 +51,7 @@ DATABASE_URL=connection-string-do-postgresql
 ECOTREE_SECRET_KEY=uma-chave-forte-e-privada
 ECOTREE_ENV=production
 ECOTREE_ACCESS_TOKEN_EXPIRE_MINUTES=60
-ECOTREE_FRONTEND_ORIGINS=https://seu-frontend.vercel.app
+ECOTREE_CORS_ORIGINS=https://eco-tree-ten.vercel.app
 ```
 
 Use uma `ECOTREE_SECRET_KEY` nova no ambiente online. Nao use a chave de exemplo em producao. Com `ECOTREE_ENV=production`, o backend nao deve iniciar se essa chave estiver ausente. Tambem nao deve iniciar sem `DATABASE_URL`, porque o SQLite local nao e seguro no sistema de arquivos temporario do Render.
@@ -88,16 +88,16 @@ Copie o valor gerado e cole apenas no painel do Render, em `ECOTREE_SECRET_KEY`.
 9. Clique em Create Web Service.
 10. Aguarde o deploy finalizar e copie a URL `https://...onrender.com`.
 
-Enquanto o frontend online ainda nao existir, `ECOTREE_FRONTEND_ORIGINS` pode ficar com origens locais para permitir teste com o frontend em desenvolvimento:
+Em desenvolvimento, `ECOTREE_CORS_ORIGINS` pode conter as origens locais do Vite, separadas por virgula:
 
 ```env
-ECOTREE_FRONTEND_ORIGINS=http://127.0.0.1:5173,http://localhost:5173,http://127.0.0.1:4173,http://localhost:4173
+ECOTREE_CORS_ORIGINS=http://127.0.0.1:5173,http://localhost:5173
 ```
 
-Quando o frontend for publicado, troque ou acrescente a URL publica dele:
+Em producao no Render, configure apenas a origem publica:
 
 ```env
-ECOTREE_FRONTEND_ORIGINS=https://seu-frontend.vercel.app
+ECOTREE_CORS_ORIGINS=https://eco-tree-ten.vercel.app
 ```
 
 Nao configure SQLite para producao. O arquivo `ECOTREE_DATABASE_FILE` continua existindo apenas para desenvolvimento local quando `DATABASE_URL` estiver vazia.
@@ -167,10 +167,10 @@ Se a URL do backend no Render ainda nao estiver disponivel, nao publique o front
 
 ### Atualizar CORS do backend depois da Vercel
 
-Depois que a Vercel gerar a URL publica do frontend, volte ao Render e atualize `ECOTREE_FRONTEND_ORIGINS` no backend para incluir essa origem:
+No painel do Render, crie ou atualize `ECOTREE_CORS_ORIGINS` no backend com a origem exata da Vercel:
 
 ```env
-ECOTREE_FRONTEND_ORIGINS=https://sua-url.vercel.app,http://127.0.0.1:5173,http://localhost:5173,http://127.0.0.1:4173,http://localhost:4173
+ECOTREE_CORS_ORIGINS=https://eco-tree-ten.vercel.app
 ```
 
 Depois de salvar a variavel no Render, faça redeploy ou restart do backend para que o CORS use a nova configuracao.
@@ -187,7 +187,7 @@ Depois de salvar a variavel no Render, faça redeploy ou restart do backend para
 
 Problemas comuns:
 
-- CORS: a URL da Vercel nao esta em `ECOTREE_FRONTEND_ORIGINS`.
+- CORS: a URL da Vercel nao esta em `ECOTREE_CORS_ORIGINS`.
 - API incorreta: `VITE_API_URL` esta com placeholder, barra final problematica ou URL diferente da API Render.
 - Backend dormindo: no plano gratuito do Render, a primeira chamada pode demorar.
 - PostgreSQL ausente: se `ECOTREE_ENV=production` estiver definido sem `DATABASE_URL`, o backend falha na inicializacao.
@@ -242,7 +242,7 @@ Depois de publicar o backend:
 7. Execute `GET /users/me`.
 8. Confirme que a resposta traz `user_id` e `email`.
 
-Quando o frontend for publicado e algum fluxo falhar por CORS, revise `ECOTREE_FRONTEND_ORIGINS` no backend. Ela deve conter exatamente a origem publica do frontend, por exemplo `https://ecotree.vercel.app`.
+Quando algum fluxo falhar por CORS, revise `ECOTREE_CORS_ORIGINS` no backend. Em producao, ela deve conter exatamente `https://eco-tree-ten.vercel.app`, sem barra final.
 
 ## 6. Testar o PWA
 

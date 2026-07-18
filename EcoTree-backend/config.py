@@ -15,8 +15,9 @@ load_dotenv(BASE_DIR / ".env")
 LOCAL_FRONTEND_ORIGINS = (
     "http://127.0.0.1:5173",
     "http://localhost:5173",
-    "http://127.0.0.1:4173",
-    "http://localhost:4173",
+)
+PRODUCTION_FRONTEND_ORIGINS = (
+    "https://eco-tree-ten.vercel.app",
 )
 
 
@@ -63,7 +64,27 @@ ACCESS_TOKEN_EXPIRE_MINUTES = _get_int_env(
     60
 )
 DATABASE_FILE = _resolve_database_file(os.getenv("ECOTREE_DATABASE_FILE"))
-ALLOWED_ORIGINS = list(dict.fromkeys([
-    *LOCAL_FRONTEND_ORIGINS,
-    *_split_csv(os.getenv("ECOTREE_FRONTEND_ORIGINS"))
-]))
+
+
+def _resolve_allowed_origins(environment, configured_origins):
+    origins = _split_csv(configured_origins)
+
+    if not origins:
+        origins = list(PRODUCTION_FRONTEND_ORIGINS)
+        if environment not in ("production", "prod"):
+            origins.extend(LOCAL_FRONTEND_ORIGINS)
+
+    origins = list(dict.fromkeys(origins))
+
+    if environment in ("production", "prod") and "*" in origins:
+        raise RuntimeError(
+            "ECOTREE_CORS_ORIGINS nao pode conter '*' em producao."
+        )
+
+    return origins
+
+
+ALLOWED_ORIGINS = _resolve_allowed_origins(
+    ENVIRONMENT,
+    os.getenv("ECOTREE_CORS_ORIGINS"),
+)
